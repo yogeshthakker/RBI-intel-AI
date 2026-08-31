@@ -42,7 +42,7 @@ export const ExceptionHubView: React.FC<ExceptionHubViewProps> = ({
     },
     {
       id: 'NEW_REGULATION',
-      label: 'New SAMA Changes',
+      label: 'New RBI Changes',
       count: exceptions.filter((e) => e.type === 'NEW_REGULATION').length,
       color: 'text-blue-600'
     },

@@ -1,8 +1,7 @@
 import {
-  RegulatoryRegime,
-  RegulatoryDocument,
-  RegulatoryClause,
-  RegulatoryRequirement,
+  RBIDocument,
+  RBIClause,
+  RBIRequirement,
   ReqMapping,
   BusinessArea,
   OwnerRole,
@@ -12,13 +11,16 @@ import {
   ExceptionItem,
   DashboardStats,
 } from '../types';
+import businessAreasSeed from '../data/seed/business_areas.json';
+import ownersSeed from '../data/seed/owners.json';
 
+// In-memory data store with rich pre-loaded RBI data
 class RegulatoryDataStore {
   public businessAreas: BusinessArea[] = [];
   public owners: OwnerRole[] = [];
-  public documents: Map<string, RegulatoryDocument> = new Map();
-  public clauses: Map<string, RegulatoryClause> = new Map();
-  public requirements: Map<string, RegulatoryRequirement> = new Map();
+  public documents: Map<string, RBIDocument> = new Map();
+  public clauses: Map<string, RBIClause> = new Map();
+  public requirements: Map<string, RBIRequirement> = new Map();
   public mappings: Map<string, ReqMapping> = new Map();
   public actions: Map<string, RemediationAction> = new Map();
   public auditEvents: AuditEvent[] = [];
@@ -28,1361 +30,1258 @@ class RegulatoryDataStore {
   }
 
   private initializeSeedData() {
-    // 1. Business Areas for SAMA and RBI
-    this.businessAreas = [
-      // SAMA Business Areas
-      { id: 'SAMA-BA-01', name: 'Corporate Governance & Board Oversight', description: 'SAMA Corporate Governance Principles, Board Committees, Fit & Proper approval.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-02', name: 'AML/CFT Governance & Sanctions', description: 'Saudi AML Law, SAFIU real-time reporting, UNSC & Presidency of State Security (PSS) lists.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-03', name: 'Customer Due Diligence (CDD) & KYC', description: 'Nafath/Absher verification, 5% Beneficial Ownership threshold, high-risk screening.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-04', name: 'Digital Onboarding & E-KYC', description: 'Remote onboarding, biometric liveness validation, Nafath API integration.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-05', name: 'Transaction Monitoring & SAFIU Filing', description: 'Real-time alert monitoring, threshold rules, 24-hour SAFIU STR XML filing.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-06', name: 'Cyber Security Framework (CSF) & SOC', description: 'SAMA CSF v3.0, Maturity Level 3+, CISO independence, 2-hour CTI incident reporting.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-07', name: 'Threat-Led Penetration Testing (TLPT)', description: 'SAMA Red Teaming / TLPT framework, simulated attacks, 30-day remediation.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-08', name: 'Cloud Computing & Data Sovereignty', description: 'SAMA Cloud Framework, In-Kingdom data residency, Class 1-4 data isolation.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-09', name: 'Open Banking & Financial APIs', description: 'SAMA Open Banking Phase 2, PISP/AISP APIs, OAuth2 mTLS security, Open Banking Portal.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-10', name: 'Payment Systems & National Rails (SARIE/mada)', description: 'SARIE RTGS/IPS, mada debit rails, Sadad bill presentment, instant limit controls.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-11', name: 'Consumer Protection & Fair Treatment', description: 'SAMA Consumer Protection Principles, Financial Rights Charter, 10-day grievance SLA.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-12', name: 'Responsible Lending & APR / DBR Ceilings', description: 'Debt Burden Ratio (DBR 33.33% salary / 45% mortgage), standardized APR Key Facts Statement.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-13', name: 'SIMAH Credit Bureau Reporting', description: 'Mandatory monthly credit data upload to SIMAH, 30-day default updates.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-14', name: 'Capital Adequacy & Basel III Accord', description: 'CET1, Tier 1, Total Capital ratios, Capital Conservation Buffer (2.5%), D-SIB surcharges.', regulator: 'SAMA' },
-      { id: 'SAMA-BA-15', name: 'Internal Audit & Assurance (3rd Line)', description: 'Risk-Based Internal Audit (RBIA), Board Audit Committee independence.', regulator: 'SAMA' },
+    // 1. Load Business Areas & Owners
+    this.businessAreas = businessAreasSeed as BusinessArea[];
+    this.owners = ownersSeed as OwnerRole[];
 
-      // RBI Business Areas
-      { id: 'RBI-BA-01', name: 'IT Governance, Risk & Controls', description: 'RBI Master Direction on IT Governance, IT Strategy Committee, CISO independence.', regulator: 'RBI' },
-      { id: 'RBI-BA-02', name: 'Cyber Security Framework & CSITE', description: 'SOC 24x7, 2-6 hour incident reporting to CERT-In & RBI, air-gapped backups, red teaming.', regulator: 'RBI' },
-      { id: 'RBI-BA-03', name: 'KYC, CKYCR & Digital Customer Identification', description: 'CKYC Registry upload within 3 days, Video KYC (V-CIP), 10% UBO threshold.', regulator: 'RBI' },
-      { id: 'RBI-BA-04', name: 'AML / CFT & FIU-IND Reporting', description: 'PMLA requirements, FINnet 2.0 XML gateway, automated CTR/STR generation within 7 days.', regulator: 'RBI' },
-      { id: 'RBI-BA-05', name: 'Digital Payment Security Controls (DPSS)', description: 'Two-factor auth (AFA), velocity checks, cooling periods on beneficiary additions, UPI risk engine.', regulator: 'RBI' },
-      { id: 'RBI-BA-06', name: 'IT Outsourcing & Cloud Service Providers', description: 'RBI Master Direction on Outsourcing IT Services, Board oversight, concentration limits.', regulator: 'RBI' },
-      { id: 'RBI-BA-07', name: 'Prudential Framework for Stressed Assets (NPA)', description: 'Day-1 default recognition, CRILC weekly reporting, 180-day Resolution Plan (RP).', regulator: 'RBI' },
-      { id: 'RBI-BA-08', name: 'Customer Protection & Grievance Redressal (CMS)', description: 'RBI Integrated Ombudsman Scheme (RB-IOS), 30-day resolution, zero-liability unauthorized transactions.', regulator: 'RBI' },
-      { id: 'RBI-BA-09', name: 'Credit Risk & Large Exposure Framework (LEF)', description: 'Single counterparty (20%) and group (25%) Tier 1 capital ceilings, LEI verification.', regulator: 'RBI' },
-      { id: 'RBI-BA-10', name: 'Liquidity Risk & Basel III (LCR / NSFR)', description: 'Liquidity Coverage Ratio (LCR >= 100%), Net Stable Funding Ratio, daily HQLA tracking.', regulator: 'RBI' },
-      { id: 'RBI-BA-11', name: 'Priority Sector Lending (PSL) & Targets', description: '40% ANBC priority sector quota, Agriculture (18%), Micro Enterprises (7.5%), RIDF investments.', regulator: 'RBI' },
-      { id: 'RBI-BA-12', name: 'Risk-Based Internal Audit (RBIA)', description: 'Annual Board-approved audit plan, independent reporting line to Audit Committee of Board (ACB).', regulator: 'RBI' }
-    ];
-
-    // 2. Owners for SAMA and RBI
-    this.owners = [
-      // SAMA Owners
-      { id: 'SAMA-OWN-01', role_title: 'Chief Information Security Officer (CISO)', line: 'Second line', department: 'Cybersecurity & Information Security Division', default_assignee_name: 'Fahad Al-Husseini', regulator: 'SAMA' },
-      { id: 'SAMA-OWN-02', role_title: 'Chief Compliance Officer (CCO)', line: 'Second line', department: 'Regulatory Compliance & Supervision Division', default_assignee_name: 'Ahmed Al-Mansoor', regulator: 'SAMA' },
-      { id: 'SAMA-OWN-03', role_title: 'Money Laundering Reporting Officer (MLRO)', line: 'Second line', department: 'Financial Crimes & AML Compliance Unit', default_assignee_name: 'Sara Al-Otaibi', regulator: 'SAMA' },
-      { id: 'SAMA-OWN-04', role_title: 'Chief Risk Officer (CRO)', line: 'Second line', department: 'Enterprise Risk Management (ERM)', default_assignee_name: 'Dr. Tariq Al-Ghamdi', regulator: 'SAMA' },
-      { id: 'SAMA-OWN-05', role_title: 'Head of Digital Banking & Channels', line: 'First line', department: 'Digital Transformation & Retail Channels', default_assignee_name: 'Khalid Al-Zahrani', regulator: 'SAMA' },
-      { id: 'SAMA-OWN-06', role_title: 'Head of Banking Operations & Payments', line: 'First line', department: 'Central Operations (SARIE/mada/SADAD)', default_assignee_name: 'Mohammed Al-Shehri', regulator: 'SAMA' },
-      { id: 'SAMA-OWN-07', role_title: 'Chief Technology Officer (CTO)', line: 'First line', department: 'Information Technology & Cloud Infrastructure', default_assignee_name: 'Bandar Al-Khatib', regulator: 'SAMA' },
-      { id: 'SAMA-OWN-08', role_title: 'Head of Internal Audit (CAE)', line: 'Third line', department: 'Internal Audit Directorate', default_assignee_name: 'Nouf Al-Dosari', regulator: 'SAMA' },
-
-      // RBI Owners
-      { id: 'RBI-OWN-01', role_title: 'Chief Information Security Officer (CISO)', line: 'Second line', department: 'Information Security Group', default_assignee_name: 'Vikramaditya Sharma', regulator: 'RBI' },
-      { id: 'RBI-OWN-02', role_title: 'Chief Compliance Officer (CCO)', line: 'Second line', department: 'Compliance Department', default_assignee_name: 'Meera Venkataraman', regulator: 'RBI' },
-      { id: 'RBI-OWN-03', role_title: 'Principal Officer / MLRO (AML/CFT)', line: 'Second line', department: 'Financial Crime Prevention Group', default_assignee_name: 'Sunil Nair', regulator: 'RBI' },
-      { id: 'RBI-OWN-04', role_title: 'Chief Risk Officer (CRO)', line: 'Second line', department: 'Risk Management Department', default_assignee_name: 'Rajesh Iyer', regulator: 'RBI' },
-      { id: 'RBI-OWN-05', role_title: 'Chief Technology Officer (CTO)', line: 'First line', department: 'Information Technology & Core Banking Group', default_assignee_name: 'Anand Kulkarni', regulator: 'RBI' },
-      { id: 'RBI-OWN-06', role_title: 'Head of Digital Banking & Payments', line: 'First line', department: 'Digital Channels & Payments (UPI/IMPS/NEFT)', default_assignee_name: 'Pooja Agarwal', regulator: 'RBI' },
-      { id: 'RBI-OWN-07', role_title: 'Head of Credit & Underwriting', line: 'First line', department: 'Credit Policy & Underwriting Group', default_assignee_name: 'Suresh Menon', regulator: 'RBI' },
-      { id: 'RBI-OWN-08', role_title: 'Chief Audit Executive (CAE)', line: 'Third line', department: 'Internal Audit Department', default_assignee_name: 'Kavita Subramanian', regulator: 'RBI' }
-    ];
-
-    // 3. Pre-seed SAMA Documents
-    const samaDocs: RegulatoryDocument[] = [
+    // 2. Pre-seed authentic RBI Master Directions & Circulars
+    const docs: RBIDocument[] = [
       {
-        id: 'sama:csf:2026',
-        regulator: 'SAMA',
-        doc_type: 'Regulatory Framework',
-        title: 'SAMA Cyber Security Framework (CSF v3.0) & Threat-Led Penetration Testing (TLPT) Mandate',
-        date: '2026-07-15',
+        id: 'rbi:md:13643',
+        regulator: 'RBI',
+        doc_type: 'Master Direction',
+        title: 'Reserve Bank of India (Commercial Banks – Cybersecurity, Technology: Risk, Resilience and Assurance Framework) Directions, 2026',
+        date: '2026-07-31',
         effective_date: '2026-10-01',
-        department: 'Cyber Risk & Technology Supervision Department',
-        category: 'Banking & Financial Institutions',
+        department: 'Department of Supervision (DoS)',
+        category: 'Commercial Banks',
         institution_type: 'Commercial Banks',
-        primary_topic: 'Cybersecurity & Tech Resilience',
-        secondary_topics: ['Threat-Led Penetration Testing (TLPT)', 'CISO Independence', 'Cloud Data Sovereignty', 'SOC 24/7 Monitoring'],
-        ref_no: 'SAMA Circular No. 46012431',
-        source_url: 'https://rulebook.sama.gov.sa/en/rules/cyber-security-framework-v3',
-        pdf_url: 'https://rulebook.sama.gov.sa/en/files/SAMA_CSF_v3_2026.pdf',
+        primary_topic: 'Cybersecurity & IT Risk',
+        secondary_topics: ['Technology Governance', 'Vendor Risk', 'Business Continuity', 'Incident Response'],
+        ref_no: 'RBI/DoS/2026-27/410',
+        source_url: 'https://rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=13643',
+        pdf_url: 'https://rbidocs.rbi.org.in/rdocs/notification/PDFs/CSITEG4102627.PDF',
         status: 'active',
         has_update: true,
         applicability: 'Applicable',
-        indexed_at: '2026-07-20T08:00:00Z',
-        last_changed: '2026-08-15T14:30:00Z',
-        raw_body_preview: 'Mandates full alignment with SAMA CSF Maturity Level 3+, direct CISO reporting line to Board Risk Committee, mandatory In-Kingdom Class 4 sovereign cloud data hosting, Threat-Led Penetration Testing (TLPT / Red Teaming) every 24 months, and 2-hour cyber incident notification to SAMA Cyber Threat Intelligence (CTI) Center.'
+        indexed_at: '2026-08-01T08:00:00Z',
+        last_changed: '2026-08-20T14:30:00Z',
+        raw_body_preview: 'Directions mandate comprehensive IT governance, CISO reporting directly to ED/CRO, Board IT Strategy Committee oversight, SOC 24x7 monitoring, teleworking controls, and vendor cloud resilience attestations.'
       },
       {
-        id: 'sama:aml:2026',
-        regulator: 'SAMA',
-        doc_type: 'Implementing Regulations',
-        title: 'SAMA Anti-Money Laundering & Combating Financing of Terrorism Rules — Beneficial Ownership (5%) & Real-Time SAFIU Integration',
-        date: '2026-06-30',
-        effective_date: '2026-09-15',
-        department: 'AML / CFT Supervision Department',
-        category: 'All Regulated Entities',
+        id: 'rbi:md:13159',
+        regulator: 'RBI',
+        doc_type: 'Master Direction',
+        title: 'Reserve Bank of India (Commercial Banks – Credit Risk Management) Directions, 2025 (Updated as on July 01, 2026)',
+        date: '2025-06-30',
+        effective_date: '2026-07-01',
+        department: 'Department of Regulation (DoR)',
+        category: 'Commercial Banks',
         institution_type: 'Commercial Banks',
-        primary_topic: 'AML / CFT & Sanctions',
-        secondary_topics: ['Beneficial Ownership 5% Threshold', 'SAFIU Electronic Integration', 'Nafath Biometric Verification', 'Presidency of State Security (PSS) Lists'],
-        ref_no: 'SAMA Circular No. 45019820',
-        source_url: 'https://rulebook.sama.gov.sa/en/rules/aml-cft-rules-2026',
+        primary_topic: 'Credit Risk Management',
+        secondary_topics: ['Loan Underwriting', 'Large Exposures', 'Early Warning Signals (EWS)', 'Stressed Assets'],
+        ref_no: 'RBI/DoR/2025-26/112',
+        source_url: 'https://rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=13159',
         status: 'amended',
         has_update: true,
         applicability: 'Applicable',
         indexed_at: '2026-07-02T10:00:00Z',
         last_changed: '2026-07-01T09:00:00Z',
-        raw_body_preview: 'Lowers mandatory beneficial ownership identification and verification threshold from 20% to 5% for all commercial corporate accounts, enforces mandatory real-time electronic Suspicious Transaction Report (STR) transmission to the Saudi Financial Intelligence Unit (SAFIU) within 24 hours, and mandates continuous screening against Presidency of State Security (PSS) terror lists.'
+        raw_body_preview: 'Mandates single borrower exposure limits, group exposure frameworks, real-time integration with CRILC reporting, independent credit risk validation, and mandatory internal ratings migration review.'
       },
       {
-        id: 'sama:cpr:2026',
-        regulator: 'SAMA',
-        doc_type: 'Regulatory Principles',
-        title: 'SAMA Banking Consumer Protection Principles & Financial Consumer Rights Charter (2026 Revision)',
-        date: '2026-08-01',
-        effective_date: '2026-11-01',
-        department: 'Consumer Protection Department',
-        category: 'Retail & Commercial Banking',
-        institution_type: 'Commercial Banks',
-        primary_topic: 'Consumer Protection & Fair Lending',
-        secondary_topics: ['Debt Burden Ratio (DBR) 33.33%', 'Total Cost of Credit & APR Disclosure', '10-Day Customer Complaint SLA', 'Early Settlement Rebates'],
-        ref_no: 'SAMA Circular No. 45009812',
-        source_url: 'https://rulebook.sama.gov.sa/en/rules/consumer-protection-principles',
-        status: 'active',
-        has_update: true,
-        applicability: 'Applicable',
-        indexed_at: '2026-08-05T11:00:00Z',
-        last_changed: '2026-08-01T11:00:00Z',
-        raw_body_preview: 'Strictly enforces Debt Burden Ratio (DBR) ceiling of 33.33% for salary-backed consumer loans and 45% for residential mortgages, mandates standardized Key Facts Statements (KFS) displaying exact APR schedules, and sets maximum 10-business-day turnaround for customer grievance resolution.'
-      },
-      {
-        id: 'sama:obk:2026',
-        regulator: 'SAMA',
-        doc_type: 'Technical Framework',
-        title: 'SAMA Open Banking Framework — Phase 2: Payment Initiation Services (PISP) & Technical API Security Guidelines',
-        date: '2026-05-18',
-        effective_date: '2026-12-01',
-        department: 'Payment Systems & FinTech Supervision Department',
-        category: 'Commercial Banks & FinTechs',
-        institution_type: 'Commercial Banks',
-        primary_topic: 'Open Banking & FinTech APIs',
-        secondary_topics: ['Payment Initiation (PISP)', 'Customer Consent Lifecycle', 'OAuth 2.0 & mTLS Security', 'Open Banking Portal Registry'],
-        ref_no: 'SAMA Circular No. 44091218',
-        source_url: 'https://rulebook.sama.gov.sa/en/rules/open-banking-framework',
-        status: 'active',
-        has_update: false,
-        applicability: 'Applicable',
-        indexed_at: '2026-05-20T09:30:00Z',
-        last_changed: '2026-05-18T09:30:00Z',
-        raw_body_preview: 'Mandates production rollout of SAMA Open Banking Payment Initiation Service (PISP) APIs across all Saudi commercial banks, requiring FAPI-compliant mutual TLS (mTLS), standardized consent dashboards in mobile banking, and real-time transaction limits validation.'
-      },
-      {
-        id: 'sama:gov:2025',
-        regulator: 'SAMA',
-        doc_type: 'Governance Regulations',
-        title: 'SAMA Key Principles of Corporate Governance in Financial Institutions (Circular 44055248)',
-        date: '2025-11-10',
-        effective_date: '2026-01-01',
-        department: 'Banking Supervision Department',
-        category: 'Commercial Banks',
-        institution_type: 'Commercial Banks',
-        primary_topic: 'Corporate Governance & Board Oversight',
-        secondary_topics: ['Board Independence 50%', 'Fit & Proper SAMA Approval', 'Three Lines of Defense', 'Executive Remuneration Clawback'],
-        ref_no: 'SAMA Circular No. 44055248',
-        source_url: 'https://rulebook.sama.gov.sa/en/rules/corporate-governance-regulations',
-        status: 'active',
-        has_update: false,
-        applicability: 'Applicable',
-        indexed_at: '2025-11-15T10:00:00Z',
-        last_changed: '2025-11-10T10:00:00Z',
-        raw_body_preview: 'Establishes governance standards requiring at least 50% independent board directors, mandatory SAMA prior written non-objection for key executive appointments, structured 3 Lines of Defense separation, and mandatory clawback provisions on executive bonuses.'
-      },
-      {
-        id: 'sama:cld:2026',
-        regulator: 'SAMA',
-        doc_type: 'Regulatory Rules',
-        title: 'SAMA Cloud Computing Regulatory Framework — In-Kingdom Sovereign Hosting & Data Classification Class 4',
-        date: '2026-04-12',
-        effective_date: '2026-08-30',
-        department: 'Cyber Risk & Technology Supervision Department',
-        category: 'Banking & Payments',
-        institution_type: 'Commercial Banks',
-        primary_topic: 'Cloud Sovereignty & Data Protection',
-        secondary_topics: ['Class 4 Sensitive Banking Data', 'In-Kingdom Data Residency', 'HSM Cryptographic Key Control', 'Tenant Logical Isolation'],
-        ref_no: 'SAMA Circular No. 43088192',
-        source_url: 'https://rulebook.sama.gov.sa/en/rules/cloud-computing-framework',
-        status: 'active',
-        has_update: false,
-        applicability: 'Applicable',
-        indexed_at: '2026-04-15T12:00:00Z',
-        last_changed: '2026-04-12T12:00:00Z',
-        raw_body_preview: 'Mandates that all Class 4 (Confidential & Highly Restricted) banking customer data and cryptographic encryption keys must reside strictly within certified cloud data centers physically located inside the Kingdom of Saudi Arabia.'
-      }
-    ];
-
-    // 4. Pre-seed RBI Documents
-    const rbiDocs: RegulatoryDocument[] = [
-      {
-        id: 'rbi:itgov:2023',
+        id: 'rbi:md:13640',
         regulator: 'RBI',
         doc_type: 'Master Direction',
-        title: 'RBI Master Direction — Information Technology Governance, Risk, Controls and Assurance Practices (2023/2024)',
-        date: '2023-11-07',
-        effective_date: '2024-04-01',
-        department: 'Department of Supervision (DoS) / IT Examination Cell',
-        category: 'Commercial Banks, SFBs & NBFCs',
-        institution_type: 'Scheduled Commercial Banks',
-        primary_topic: 'IT Governance & Enterprise Architecture',
-        secondary_topics: ['IT Strategy Committee', 'CISO Independence', 'Disaster Recovery (DR) Drills', 'Annual IT Audit'],
-        ref_no: 'RBI/2023-24/107 DoS.CO.CSITE.SEC.No.1852/31.01.015/2023-24',
-        source_url: 'https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=12562',
-        pdf_url: 'https://rbidocs.rbi.org.in/rdocs/notification/PDFs/107MDITGOV07112023.pdf',
-        status: 'active',
-        has_update: true,
-        applicability: 'Applicable',
-        indexed_at: '2023-11-10T10:00:00Z',
-        last_changed: '2024-04-01T09:00:00Z',
-        raw_body_preview: 'Establishes statutory IT governance architecture for banks in India. Requires Board IT Strategy Committee, direct CISO reporting to Risk Committee, mandatory bi-annual live DR failover drills with RTO < 2 hours, and comprehensive third-party vendor risk governance.'
-      },
-      {
-        id: 'rbi:kyc:2016',
-        regulator: 'RBI',
-        doc_type: 'Master Direction',
-        title: 'RBI Master Direction — Know Your Customer (KYC) Direction, 2016 (Updated 2024/2025)',
-        date: '2016-02-25',
-        effective_date: '2024-01-04',
-        department: 'Department of Regulation (DoR)',
-        category: 'All Regulated Entities',
-        institution_type: 'Scheduled Commercial Banks',
-        primary_topic: 'KYC, AML & Digital Onboarding',
-        secondary_topics: ['CKYCR 3-Day Upload', 'Video KYC (V-CIP) AI Controls', '10% Beneficial Ownership Threshold', 'Periodic KYC Updation'],
-        ref_no: 'RBI/DBR/2015-16/18 Master Direction DBR.AML.BC.No.81/14.01.001/2015-16',
-        source_url: 'https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=11566',
-        status: 'amended',
-        has_update: true,
-        applicability: 'Applicable',
-        indexed_at: '2024-01-10T08:00:00Z',
-        last_changed: '2024-01-04T12:00:00Z',
-        raw_body_preview: 'Mandates CKYC registry record upload within 3 calendar days of onboarding, specifies V-CIP video recording with geo-tagging, live facial matching, Aadhaar OTP XML decryption, and sets 10% ultimate beneficial ownership threshold.'
-      },
-      {
-        id: 'rbi:csite:2016',
-        regulator: 'RBI',
-        doc_type: 'Supervisory Circular',
-        title: 'RBI Cyber Security Framework in Banks — CSITE Mandate & Rapid Incident Reporting',
-        date: '2016-06-02',
-        effective_date: '2016-06-02',
-        department: 'Cyber Security and Information Technology Examination Cell (CSITE)',
-        category: 'Commercial Banks',
-        institution_type: 'Scheduled Commercial Banks',
-        primary_topic: 'Cyber Resilience & Threat Intelligence',
-        secondary_topics: ['2-6 Hour Incident Notification', '24x7 Security Operations Center', 'Air-Gapped Golden Backups', 'Red Teaming Exercises'],
-        ref_no: 'RBI/2015-16/418 DBS.CO/CSITE/BC.11/31.01.015/2015-16',
-        source_url: 'https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=10435',
-        status: 'active',
-        has_update: true,
-        applicability: 'Applicable',
-        indexed_at: '2023-01-15T11:00:00Z',
-        last_changed: '2024-03-10T14:00:00Z',
-        raw_body_preview: 'Enforces mandatory 24x7 Security Operations Center (SOC), air-gapped immutable ransomware backups, Red Teaming / Adversary Emulation, and urgent notification of cyber incidents to RBI CSITE & CERT-In within 2 to 6 hours.'
-      },
-      {
-        id: 'rbi:outsourcing:2023',
-        regulator: 'RBI',
-        doc_type: 'Master Direction',
-        title: 'RBI Master Direction on Outsourcing of Information Technology Services (2023)',
-        date: '2023-04-10',
-        effective_date: '2023-10-01',
+        title: 'Reserve Bank of India (Commercial Banks – Internal Audit Function & RBIA) Directions, 2026',
+        date: '2026-06-15',
+        effective_date: '2026-09-01',
         department: 'Department of Supervision (DoS)',
-        category: 'Banks & NBFCs',
-        institution_type: 'Scheduled Commercial Banks',
-        primary_topic: 'Third Party & Cloud Outsourcing',
-        secondary_topics: ['Core Banking Outsourcing Ban', 'Unrestricted Audit Rights', 'Vendor Concentration Risk', 'Exit Strategy & Escrow'],
-        ref_no: 'RBI/2022-23/159 DoS.CO.CSITE.SEC.No.8/31.01.015/2022-23',
-        source_url: 'https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=12486',
+        category: 'Commercial Banks',
+        institution_type: 'Commercial Banks',
+        primary_topic: 'Internal Audit & Governance',
+        secondary_topics: ['RBIA Methodology', 'Audit Independence', 'Staff Rotation', 'Annual Audit Plan'],
+        ref_no: 'RBI/DoS/2026-27/218',
+        source_url: 'https://rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=13640',
         status: 'active',
         has_update: false,
         applicability: 'Applicable',
-        indexed_at: '2023-04-15T09:00:00Z',
-        last_changed: '2023-04-10T09:00:00Z',
-        raw_body_preview: 'Prohibits outsourcing of core management functions, mandates unhindered right of audit for RBI supervisors and bank auditors into cloud service provider facilities, and requires tested exit plans.'
+        indexed_at: '2026-06-20T11:00:00Z',
+        last_changed: '2026-06-15T11:00:00Z',
+        raw_body_preview: 'Mandates Risk Based Internal Audit (RBIA), Board Audit Committee independence, minimum staff tenures in audit, exclusion of audit remuneration from business unit profit metrics, and continuous off-site monitoring.'
       },
       {
-        id: 'rbi:dpss:2021',
+        id: 'rbi:cir:2026:54',
+        regulator: 'RBI',
+        doc_type: 'Circular',
+        title: 'Master Direction – Know Your Customer (KYC) Direction, 2026 — Amendments to V-CIP & Beneficial Ownership Rules',
+        date: '2026-08-14',
+        effective_date: '2026-11-01',
+        department: 'Department of Regulation (DoR)',
+        category: 'Commercial Banks',
+        institution_type: 'Commercial Banks',
+        primary_topic: 'KYC & AML / CFT',
+        secondary_topics: ['V-CIP Verification', 'Beneficial Ownership Threshold 10%', 'CKYCR Sync', 'Periodic Updation'],
+        ref_no: 'RBI/DoR/2026-27/54',
+        source_url: 'https://rbi.org.in/Scripts/NotificationUser.aspx?Id=14298',
+        status: 'active',
+        has_update: true,
+        applicability: 'Applicable',
+        indexed_at: '2026-08-15T09:30:00Z',
+        last_changed: '2026-08-14T09:30:00Z',
+        raw_body_preview: 'Tightens beneficial ownership threshold to 10% for legal entities, mandates live geo-location geotagging and AI liveness check in Video KYC (V-CIP), and prescribes 30-day timeline for CKYCR registry sync.'
+      },
+      {
+        id: 'rbi:md:10404',
         regulator: 'RBI',
         doc_type: 'Master Direction',
-        title: 'RBI Master Direction on Digital Payment Security Controls (2021/2024)',
-        date: '2021-02-18',
-        effective_date: '2021-08-18',
-        department: 'Department of Payment and Settlement Systems (DPSS)',
-        category: 'Commercial Banks & Payment Banks',
-        institution_type: 'Scheduled Commercial Banks',
-        primary_topic: 'Payment Systems Security',
-        secondary_topics: ['Additional Factor of Authentication (AFA)', 'Cooling Period for Beneficiaries', 'Behavioral Biometrics', 'UPI Fraud Engine'],
-        ref_no: 'RBI/2020-21/74 DPSS.CO.OD.No.753/06.11.001/2020-21',
-        source_url: 'https://www.rbi.org.in/Scripts/NotificationUser.aspx?Id=12032',
+        title: 'Reserve Bank of India (Establishment of Branch Office / Liaison Office / Project Office in India) Directions, 2026',
+        date: '2026-05-10',
+        effective_date: '2026-06-01',
+        department: 'Foreign Exchange Department (FED)',
+        category: 'Foreign Banks & Cross-Border Entities',
+        institution_type: 'Foreign Banks',
+        primary_topic: 'FEMA & Cross-Border Operations',
+        secondary_topics: ['Liaison Office', 'Project Office', 'FCRA Declarations', 'AD Category-I Bank Approvals'],
+        ref_no: 'RBI/FED/2026-27/18',
+        source_url: 'https://rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=10404',
+        status: 'active',
+        has_update: false,
+        applicability: 'Likely Applicable',
+        indexed_at: '2026-05-15T12:00:00Z',
+        last_changed: '2026-05-10T12:00:00Z',
+        raw_body_preview: 'Governs approval mechanisms for foreign corporate branch offices, KYC documentation for foreign parents, embassy attestations, and annual activity certificate (AAC) compliance.'
+      },
+      {
+        id: 'rbi:cir:2026:88',
+        regulator: 'RBI',
+        doc_type: 'Circular',
+        title: 'Prudential Framework on Liquidity Coverage Ratio (LCR) & Run-off Factors for Internet & Mobile Banking Deposits',
+        date: '2026-08-22',
+        effective_date: '2027-01-01',
+        department: 'Department of Regulation (DoR)',
+        category: 'Commercial Banks',
+        institution_type: 'Commercial Banks',
+        primary_topic: 'Liquidity & ALM',
+        secondary_topics: ['LCR Haircuts', 'Digital Run-Off Factor', 'HQLA Buffer', 'Stress Testing'],
+        ref_no: 'RBI/DoR/2026-27/88',
+        source_url: 'https://rbi.org.in/Scripts/NotificationUser.aspx?Id=14332',
         status: 'active',
         has_update: false,
         applicability: 'Applicable',
-        indexed_at: '2021-02-20T10:00:00Z',
-        last_changed: '2024-02-15T10:00:00Z',
-        raw_body_preview: 'Enforces Multi-Factor Authentication for all digital payment channels, mandatory minimum 30-minute cooling period and transaction caps on newly added payees, velocity checks, and encrypted card storage.'
+        indexed_at: '2026-08-23T06:00:00Z',
+        last_changed: '2026-08-22T06:00:00Z',
+        raw_body_preview: 'Introduces an additional 5% run-off factor for retail deposits enabled with Internet Banking and Mobile Banking (IMB) in LCR computations to address rapid withdrawal risk.'
       }
     ];
 
-    // Store docs
-    [...samaDocs, ...rbiDocs].forEach((doc) => this.documents.set(doc.id, doc));
+    docs.forEach(doc => this.documents.set(doc.id, doc));
 
-    // 5. Pre-seed SAMA Requirements & Mappings
-    const samaReqsData = [
+    // 3. Pre-seed Clauses & Requirements
+    const sampleClauses: RBIClause[] = [
+      // Cybersecurity MD 13643
       {
-        id: 'req:csf:01',
-        doc_id: 'sama:csf:2026',
-        clause_id: 'sama:csf:2026#SEC-3.1',
-        clause_label: 'Section 3.1',
-        clause_title: 'CISO Reporting Line & Board Risk Independence',
-        requirement: 'The bank shall ensure that the Chief Information Security Officer (CISO) operates as an independent executive reporting directly to the Board Risk Committee and CEO, without operational conflict with IT delivery or commercial revenue functions.',
-        obligation_type: 'Governance' as const,
-        applicability: 'All Commercial Banks in KSA',
-        branch_relevance: 'Low' as const,
-        timeline: 'Effective 2026-10-01',
-        keywords: ['ciso independence', 'board risk committee', 'governance', 'sama csf'],
-        extracted_at: '2026-07-20T08:30:00Z',
-        mapping: {
-          req_id: 'req:csf:01',
-          business_area: 'SAMA-BA-06',
-          business_area_name: 'Cyber Security Framework (CSF) & SOC',
-          policy: 'Cyber Security Governance Policy (POL-SAMA-CSF-01)',
-          process: 'CISO Governance & Escalation Framework (PRC-SEC-01)',
-          control: 'Direct Board Risk Committee Reporting Matrix & Non-Interference Charter (CTL-SEC-001)',
-          control_type: 'Preventive' as const,
-          owner_process: 'SAMA-OWN-01',
-          owner_process_name: 'Chief Information Security Officer (CISO)',
-          owner_process_line: 'Second line' as const,
-          owner_control: 'SAMA-OWN-04',
-          owner_control_name: 'Chief Risk Officer (CRO)',
-          owner_control_line: 'Second line' as const,
-          products_impacted: ['All Banking Systems', 'Board Secretariat'],
-          tech_systems_impacted: ['GRC Portal', 'BoardVantage Portal'],
-          evidence_required: 'Board Minutes approving CISO reporting charter & independent budget allocation.',
-          classification: 'Compliant' as const,
-          finding: 'CISO currently has documented direct reporting access to the Board Risk Committee.',
-          recommendation: 'Formalize charter update in next quarterly Board Risk pack for SAMA supervision.',
-          severity: 'High' as const,
-          provenance: 'reviewed' as const,
-          created_at: '2026-07-20T09:00:00Z',
-          actions_count: 0
-        }
+        id: 'rbi:md:13643#CHI-A-2',
+        doc_id: 'rbi:md:13643',
+        clause_label: 'Clause 2 (Commencement)',
+        chapter: 'Chapter I - Preliminary',
+        seq: 1,
+        text: 'The regulatory directions are applicable and enforceable from the date of issue with transition timelines specified in Annexure II.',
+        needs_review: false
       },
       {
-        id: 'req:csf:02',
-        doc_id: 'sama:csf:2026',
-        clause_id: 'sama:csf:2026#SEC-4.8',
-        clause_label: 'Section 4.8',
-        clause_title: 'SAMA Cyber Threat Intelligence (CTI) 2-Hour Incident Notification',
-        requirement: 'Regulated banks must immediately notify the SAMA Cyber Threat Intelligence (CTI) center within 2 hours of detecting any severity 1 or severity 2 cyber incident, denial of service attack, or confirmed data exposure via the SAMA CTI automated portal.',
-        obligation_type: 'Timeline' as const,
-        applicability: 'All Commercial & Digital Banks',
-        branch_relevance: 'High' as const,
-        timeline: 'Mandatory within 120 minutes of detection',
-        keywords: ['cti reporting', '2 hours sla', 'cyber incident', 'sama alert'],
-        extracted_at: '2026-07-20T08:35:00Z',
-        mapping: {
-          req_id: 'req:csf:02',
-          business_area: 'SAMA-BA-06',
-          business_area_name: 'Cyber Security Framework (CSF) & SOC',
-          policy: 'Cyber Incident Response & Crisis Management Policy (POL-SAMA-SEC-04)',
-          process: '24/7 SOC Critical Incident Escalation & SAMA CTI Dispatch (PRC-SOC-02)',
-          control: 'Automated SIEM/SOAR Playbook with SAMA CTI Portal API Dispatcher (CTL-SOC-014)',
-          control_type: 'Detective' as const,
-          owner_process: 'SAMA-OWN-01',
-          owner_process_name: 'Chief Information Security Officer (CISO)',
-          owner_process_line: 'Second line' as const,
-          owner_control: 'SAMA-OWN-02',
-          owner_control_name: 'Chief Compliance Officer (CCO)',
-          owner_control_line: 'Second line' as const,
-          products_impacted: ['Online Banking', 'Mobile Banking', 'SARIE Rails', 'ATM Network'],
-          tech_systems_impacted: ['Splunk Enterprise Security', 'Palo Alto XSOAR', 'SAMA CTI Gateway'],
-          evidence_required: 'Simulated 2-hour SOAR drill log, SAMA CTI dispatch receipt, and Incident Management SOP.',
-          classification: 'Partially Compliant' as const,
-          finding: 'SOC triggers alerts within 30 minutes, but formal SAMA CTI dispatch script requires manual CISO authorization taking ~150 mins.',
-          recommendation: 'Configure automated pre-authorized SOAR dispatch workflow to guarantee SAMA notification within 90 minutes.',
-          severity: 'Critical' as const,
-          provenance: 'reviewed' as const,
-          created_at: '2026-07-20T09:15:00Z',
-          actions_count: 1
-        }
+        id: 'rbi:md:13643#CHII-A-7',
+        doc_id: 'rbi:md:13643',
+        clause_label: 'Clause 7 (Board Governance)',
+        chapter: 'Chapter II - Role of the Board',
+        seq: 2,
+        text: 'The Board of Directors is responsible for reviewing and authorizing the strategic frameworks and policies governing information technology, asset management, business continuity, and cybersecurity, including protocols for incident response and cyber crisis management at least annually.',
+        needs_review: false
       },
       {
-        id: 'req:aml:01',
-        doc_id: 'sama:aml:2026',
-        clause_id: 'sama:aml:2026#ART-14.2',
-        clause_label: 'Article 14.2',
-        clause_title: '5% Beneficial Ownership (UBO) Threshold for Corporate Accounts',
-        requirement: 'Financial institutions must identify, verify, and document the identity of all natural persons who ultimately own or control 5% or more of the capital or voting rights in any commercial corporate customer opening an account in the Kingdom.',
-        obligation_type: 'Screening' as const,
-        applicability: 'All Commercial Banks & Corporate Branches',
-        branch_relevance: 'High' as const,
-        timeline: 'Effective 2026-09-15',
-        keywords: ['5% ubo', 'beneficial ownership', 'commercial registry', 'sama aml'],
-        extracted_at: '2026-07-02T10:15:00Z',
-        mapping: {
-          req_id: 'req:aml:01',
-          business_area: 'SAMA-BA-03',
-          business_area_name: 'Customer Due Diligence (CDD) & KYC',
-          policy: 'Corporate AML/CFT Customer Due Diligence Policy (POL-SAMA-AML-02)',
-          process: 'Commercial Onboarding & Legal Entity Shareholder Verification (PRC-CORP-01)',
-          control: 'Automated Corporate Registry (Wathq) & 5% UBO Shareholder Resolution Rule (CTL-AML-008)',
-          control_type: 'Preventive' as const,
-          owner_process: 'SAMA-OWN-03',
-          owner_process_name: 'Money Laundering Reporting Officer (MLRO)',
-          owner_process_line: 'Second line' as const,
-          owner_control: 'SAMA-OWN-02',
-          owner_control_name: 'Chief Compliance Officer (CCO)',
-          owner_control_line: 'Second line' as const,
-          products_impacted: ['Corporate Current Accounts', 'Trade Finance', 'Treasury Facilities'],
-          tech_systems_impacted: ['Oracle Flexcube CBS', 'Fenergo CLM', 'Wathq Ministry API'],
-          evidence_required: 'CBS parameter screenshot (5% threshold), CLM UAT sign-off report, updated corporate onboarding SOP.',
-          classification: 'Gap' as const,
-          finding: 'Core Banking system (Flexcube) and corporate onboarding workflow still hardcoded to old 20% beneficial ownership threshold.',
-          recommendation: 'Deploy CBS parameter update to enforce 5% threshold and re-screen top 2,000 corporate accounts.',
-          severity: 'Critical' as const,
-          provenance: 'reviewed' as const,
-          created_at: '2026-07-02T10:45:00Z',
-          actions_count: 1
-        }
+        id: 'rbi:md:13643#CHIII-E-15',
+        doc_id: 'rbi:md:13643',
+        clause_label: 'Clause 15 (CISO Reporting)',
+        chapter: 'Chapter III - IT Governance',
+        seq: 3,
+        text: 'The Chief Information Security Officer (CISO) shall be a designated independent executive reporting directly to the Executive Director or Chief Risk Officer (CRO) and having direct access to the IT Strategy Committee of the Board.',
+        needs_review: false
       },
       {
-        id: 'req:cpr:01',
-        doc_id: 'sama:cpr:2026',
-        clause_id: 'sama:cpr:2026#PRIN-7',
-        clause_label: 'Principle 7',
-        clause_title: 'Debt Burden Ratio (DBR 33.33%) & Standardized APR Disclosure',
-        requirement: 'Banks are strictly prohibited from approving salary-backed consumer personal loans where total monthly debt installments exceed 33.33% of verified net monthly salary (or 45% for residential mortgages), calculated via mandatory SIMAH inquiry.',
-        obligation_type: 'Prudential' as const,
-        applicability: 'All Commercial Retail Banks',
-        branch_relevance: 'High' as const,
-        timeline: 'Mandatory Continuous',
-        keywords: ['debt burden ratio', 'dbr 33.33%', 'simah pull', 'consumer protection'],
-        extracted_at: '2026-08-05T11:30:00Z',
-        mapping: {
-          req_id: 'req:cpr:01',
-          business_area: 'SAMA-BA-12',
-          business_area_name: 'Responsible Lending & APR / DBR Ceilings',
-          policy: 'Retail Credit Risk & Responsible Lending Policy (POL-SAMA-RET-01)',
-          process: 'Automated Loan Origination System (LOS) DBR Calculation & SIMAH Fetch (PRC-LOS-03)',
-          control: 'Hard LOS Decisioning Gate Blocking DBR > 33.33% with No Manual Override (CTL-LOS-004)',
-          control_type: 'Preventive' as const,
-          owner_process: 'SAMA-OWN-05',
-          owner_process_name: 'Head of Digital Banking & Channels',
-          owner_process_line: 'First line' as const,
-          owner_control: 'SAMA-OWN-04',
-          owner_control_name: 'Chief Risk Officer (CRO)',
-          owner_control_line: 'Second line' as const,
-          products_impacted: ['Personal Loans', 'Auto Murabaha', 'Credit Cards', 'Residential Mortgages'],
-          tech_systems_impacted: ['Loan Origination System (LOS)', 'SIMAH B2B Gateway', 'Core Banking'],
-          evidence_required: 'LOS business rule configuration dump, SIMAH real-time log samples, sample loan files audit.',
-          classification: 'Compliant' as const,
-          finding: 'LOS system hardcoded with 33.33% DBR ceiling; SIMAH score pull enforced on 100% of retail applications.',
-          recommendation: 'Maintain quarterly sample audit to ensure no credit deviation bypass.',
-          severity: 'High' as const,
-          provenance: 'reviewed' as const,
-          created_at: '2026-08-05T12:00:00Z',
-          actions_count: 0
-        }
+        id: 'rbi:md:13643#CHV-B-24',
+        doc_id: 'rbi:md:13643',
+        clause_label: 'Clause 24 (DLP & Data Protection)',
+        chapter: 'Chapter V - Baseline Cybersecurity',
+        seq: 4,
+        text: 'Banks must deploy comprehensive Data Leak Prevention (DLP) across endpoints, network perimeters, and email gateways, with automated blocking of unencrypted personally identifiable information (PII) and customer financial records.',
+        needs_review: false
       },
       {
-        id: 'req:obk:01',
-        doc_id: 'sama:obk:2026',
-        clause_id: 'sama:obk:2026#SPEC-5.3',
-        clause_label: 'Section 5.3',
-        clause_title: 'FAPI 1.0 Advanced Security & mTLS for Open Banking PISP APIs',
-        requirement: 'All Payment Initiation Service Provider (PISP) APIs exposed by the bank must comply with Financial-grade API (FAPI 1.0 Advanced) standards, requiring Mutual TLS (mTLS), cryptographic client assertion, and granular customer consent validation.',
-        obligation_type: 'Cybersecurity' as const,
+        id: 'rbi:md:13643#CHV-K-31',
+        doc_id: 'rbi:md:13643',
+        clause_label: 'Clause 31 (Vulnerability & Patch Mgmt)',
+        chapter: 'Chapter V - Baseline Cybersecurity',
+        seq: 5,
+        text: 'Banks shall mandate remediation of critical cybersecurity vulnerabilities within 48 hours and high-severity vulnerabilities within 7 days of disclosure. Zero-day threats require immediate compensatory controls and incident notification to CSITE within 6 hours.',
+        needs_review: false
+      },
+      {
+        id: 'rbi:md:13643#CHV-N-38',
+        doc_id: 'rbi:md:13643',
+        clause_label: 'Clause 38 (Multi-Factor Authentication)',
+        chapter: 'Chapter V - Baseline Cybersecurity',
+        seq: 6,
+        text: 'Mandatory Multi-Factor Authentication (MFA) or adaptive risk-based authentication for all privileged internal administrators, remote access teleworking channels, and digital customer fund transfers above INR 50,000.',
+        needs_review: false
+      },
+
+      // Credit Risk MD 13159
+      {
+        id: 'rbi:md:13159#CHII-B-4',
+        doc_id: 'rbi:md:13159',
+        clause_label: 'Clause 4 (Credit Risk Policy)',
+        chapter: 'Chapter II - Credit Risk Governance',
+        seq: 1,
+        text: 'Banks shall formulate a Board-approved Credit Risk Management Policy laying down prudential exposure ceilings for single borrowers, connected counterparties, sensitive sectors, and geographical concentrations.',
+        needs_review: false
+      },
+      {
+        id: 'rbi:md:13159#CHIII-D-12',
+        doc_id: 'rbi:md:13159',
+        clause_label: 'Clause 12 (Early Warning Signals - EWS)',
+        chapter: 'Chapter III - Credit Underwriting & Monitoring',
+        seq: 2,
+        text: 'Banks must institute an automated Early Warning Signals (EWS) system integrated with Central Repository of Information on Large Credits (CRILC), Goods and Services Tax (GST) data feeds, and MCA registry to detect red flags in accounts with aggregate exposure of INR 5 Crore and above.',
+        needs_review: false
+      },
+      {
+        id: 'rbi:md:13159#CHIV-A-18',
+        doc_id: 'rbi:md:13159',
+        clause_label: 'Clause 18 (Independent Credit Validation)',
+        chapter: 'Chapter IV - Credit Review & Risk Validation',
+        seq: 3,
+        text: 'The Credit Risk Department must conduct an independent risk assessment separate from business sanctioning teams for all corporate credit proposals exceeding INR 25 Crore prior to sanction.',
+        needs_review: false
+      },
+
+      // RBIA MD 13640
+      {
+        id: 'rbi:md:13640#CHI-A-PRE',
+        doc_id: 'rbi:md:13640',
+        clause_label: 'Preamble (RBIA Adoption)',
+        chapter: 'Chapter I - Preliminary',
+        seq: 1,
+        text: 'Banks are mandated to implement a Risk Based Internal Audit (RBIA) system that emphasizes the evaluation of risk management frameworks and internal controls, moving beyond purely transaction-focused audit.',
+        needs_review: false
+      },
+      {
+        id: 'rbi:md:13640#CHII-A-7',
+        doc_id: 'rbi:md:13640',
+        clause_label: 'Clause 7 (Audit Staff Tenure & Rotation)',
+        chapter: 'Chapter II - Board & Management Oversight',
+        seq: 2,
+        text: 'The Board or Local Advisory Board must establish a minimum service duration for personnel within the internal audit department (at least 3 years), and establish structured temporary rotation into the audit function for subject matter specialists.',
+        needs_review: false
+      },
+      {
+        id: 'rbi:md:13640#CHIII-B-15',
+        doc_id: 'rbi:md:13640',
+        clause_label: 'Clause 15 (Audit Compensation Independence)',
+        chapter: 'Chapter III - Audit Independence',
+        seq: 3,
+        text: 'Banks must ensure that the pay and variable bonuses of internal audit personnel are strictly independent of the financial performance or profit targets of the business areas they audit.',
+        needs_review: false
+      },
+
+      // KYC Circular 2026:54
+      {
+        id: 'rbi:cir:2026:54#PARA-3',
+        doc_id: 'rbi:cir:2026:54',
+        clause_label: 'Paragraph 3 (Beneficial Ownership 10% Threshold)',
+        chapter: 'Amendments to Master Direction on KYC',
+        seq: 1,
+        text: 'The threshold for identifying the Beneficial Owner (BO) of non-individual corporate clients is revised downwards from 25% (or 15% for partnerships) to a strict 10% ownership or voting right threshold.',
+        needs_review: false
+      },
+      {
+        id: 'rbi:cir:2026:54#PARA-7',
+        doc_id: 'rbi:cir:2026:54',
+        clause_label: 'Paragraph 7 (V-CIP Live Geotagging & AI Liveness)',
+        chapter: 'Amendments to Master Direction on KYC',
+        seq: 2,
+        text: 'In Video Customer Identification Process (V-CIP), banks must verify live GPS latitude/longitude within Indian territory and incorporate automated facial biometric liveness detection to prevent deepfakes and spoofed media.',
+        needs_review: false
+      },
+
+      // LCR Circular 2026:88
+      {
+        id: 'rbi:cir:2026:88#PARA-4',
+        doc_id: 'rbi:cir:2026:88',
+        clause_label: 'Paragraph 4 (Digital Deposit Run-Off Factor)',
+        chapter: 'Liquidity Coverage Ratio Guidelines',
+        seq: 1,
+        text: 'Banks shall assign an additional 5% run-off factor on retail and small business deposits that are enabled for Internet and Mobile Banking (IMB), resulting in a 10% total expected run-off rate in 30-day stress scenarios.',
+        needs_review: false
+      }
+    ];
+
+    sampleClauses.forEach(cl => this.clauses.set(cl.id, cl));
+
+    // 4. Pre-seed Parsed Requirements & AI Paraphrases
+    const sampleReqs: RBIRequirement[] = [
+      // Req 1: Cyber Board Policy
+      {
+        id: 'req:13643:01',
+        clause_id: 'rbi:md:13643#CHII-A-7',
+        doc_id: 'rbi:md:13643',
+        doc_title: 'RBI Cybersecurity, Technology Risk & Assurance Directions, 2026',
+        clause_label: 'Clause 7',
+        chapter: 'Role of the Board',
+        clause_title: 'Annual Board Review of Cybersecurity & Tech Policies',
+        requirement: 'Bank Board must annually review and formally approve IT Strategy, Cybersecurity Policy, Cyber Crisis Management Plan (CCMP), and Business Continuity Plan (BCP) with documented minutes.',
+        obligation_type: 'Governance',
+        applicability: 'All Commercial Banks & Foreign Bank Branches',
+        branch_relevance: 'Low',
+        timeline: 'Annual board approval cycle (due before Oct 31 each fiscal year)',
+        keywords: ['cybersecurity policy', 'board approval', 'ccmp', 'bcp', 'it strategy committee'],
+        extracted_at: '2026-08-01T08:30:00Z',
+        model: 'gemini-2.5-flash',
+        needs_review: false
+      },
+      // Req 2: CISO Independence
+      {
+        id: 'req:13643:02',
+        clause_id: 'rbi:md:13643#CHIII-E-15',
+        doc_id: 'rbi:md:13643',
+        doc_title: 'RBI Cybersecurity, Technology Risk & Assurance Directions, 2026',
+        clause_label: 'Clause 15',
+        chapter: 'IT Governance',
+        clause_title: 'CISO Independent Reporting Line to CRO/ED',
+        requirement: 'Appoint an independent CISO who reports hierarchically to the Executive Director or Chief Risk Officer, free from operational IT / DevOps responsibilities.',
+        obligation_type: 'Governance',
+        applicability: 'Commercial Banks',
+        branch_relevance: 'Low',
+        timeline: 'Immediate compliance upon direction issuance',
+        keywords: ['ciso', 'reporting line', 'cro', 'executive director', 'segregation of duties'],
+        extracted_at: '2026-08-01T08:30:00Z',
+        model: 'gemini-2.5-flash',
+        needs_review: false
+      },
+      // Req 3: DLP Enforcement
+      {
+        id: 'req:13643:03',
+        clause_id: 'rbi:md:13643#CHV-B-24',
+        doc_id: 'rbi:md:13643',
+        doc_title: 'RBI Cybersecurity, Technology Risk & Assurance Directions, 2026',
+        clause_label: 'Clause 24',
+        chapter: 'Baseline Cybersecurity',
+        clause_title: 'Data Leak Prevention (DLP) for PII and Financial Records',
+        requirement: 'Implement automated DLP rules across endpoints, USB ports, web gateways, and emails to detect and block unencrypted PAN, Aadhaar, and account number exfiltration.',
+        obligation_type: 'Cybersecurity',
         applicability: 'All Commercial Banks',
-        branch_relevance: 'Medium' as const,
-        timeline: 'Effective 2026-12-01',
-        keywords: ['open banking', 'pisp apis', 'fapi advanced', 'sama open banking'],
-        extracted_at: '2026-05-20T10:00:00Z',
-        mapping: {
-          req_id: 'req:obk:01',
-          business_area: 'SAMA-BA-09',
-          business_area_name: 'Open Banking & Financial APIs',
-          policy: 'Open Banking Security & API Architecture Standard (POL-SAMA-API-01)',
-          process: 'FinTech Onboarding & API Key Rotation Lifecycle (PRC-API-01)',
-          control: 'Kong API Gateway FAPI 1.0 mTLS Enforcement & Dynamic Consent Token Gate (CTL-API-009)',
-          control_type: 'Preventive' as const,
-          owner_process: 'SAMA-OWN-05',
-          owner_process_name: 'Head of Digital Banking & Channels',
-          owner_process_line: 'First line' as const,
-          owner_control: 'SAMA-OWN-01',
-          owner_control_name: 'Chief Information Security Officer (CISO)',
-          owner_control_line: 'Second line' as const,
-          products_impacted: ['Open Banking APIs', 'Digital Wallet Integration'],
-          tech_systems_impacted: ['Kong Enterprise API Gateway', 'WSO2 Identity Server', 'Open Banking KSA Sandbox'],
-          evidence_required: 'Open Banking KSA sandbox conformance test certification, mTLS certificate chain audit.',
-          classification: 'Partially Compliant' as const,
-          finding: 'mTLS implemented on API gateway, but customer consent revocation callback requires integration with Mobile Banking app.',
-          recommendation: 'Complete Mobile Banking consent dashboard integration before SAMA Phase 2 live audit.',
-          severity: 'High' as const,
-          provenance: 'reviewed' as const,
-          created_at: '2026-05-20T10:30:00Z',
-          actions_count: 1
-        }
-      }
-    ];
-
-    // 6. Pre-seed RBI Requirements & Mappings
-    const rbiReqsData = [
-      {
-        id: 'rbi:req:itgov:01',
-        doc_id: 'rbi:itgov:2023',
-        clause_id: 'rbi:itgov:2023#CH-2.1',
-        clause_label: 'Chapter II, Para 4',
-        clause_title: 'IT Strategy Committee of the Board & Independent Review',
-        requirement: 'The bank shall constitute an IT Strategy Committee of the Board headed by an Independent Director, meeting at least quarterly to review IT alignment, cyber posture, and high-value technology investments.',
-        obligation_type: 'Governance' as const,
-        applicability: 'All Scheduled Commercial Banks (India)',
-        branch_relevance: 'Low' as const,
-        timeline: 'Effective 2024-04-01',
-        keywords: ['it strategy committee', 'board governance', 'independent director', 'rbi it gov'],
-        extracted_at: '2023-11-10T10:30:00Z',
-        mapping: {
-          req_id: 'rbi:req:itgov:01',
-          business_area: 'RBI-BA-01',
-          business_area_name: 'IT Governance, Risk & Controls',
-          policy: 'IT Governance & Board Oversight Policy (POL-RBI-ITG-01)',
-          process: 'Quarterly Board IT Strategy Review Workflow (PRC-ITG-01)',
-          control: 'Board IT Strategy Committee Charter & Quorum Verification (CTL-ITG-001)',
-          control_type: 'Preventive' as const,
-          owner_process: 'RBI-OWN-05',
-          owner_process_name: 'Chief Technology Officer (CTO)',
-          owner_process_line: 'First line' as const,
-          owner_control: 'RBI-OWN-02',
-          owner_control_name: 'Chief Compliance Officer (CCO)',
-          owner_control_line: 'Second line' as const,
-          products_impacted: ['All Bank Technology'],
-          tech_systems_impacted: ['Board Portal', 'GRC Solution'],
-          evidence_required: 'Board resolution constituting IT Strategy Committee with independent chair and quarterly meeting minutes.',
-          classification: 'Compliant' as const,
-          finding: 'IT Strategy Committee constituted with Independent Director as Chair; met 4 times in FY2025.',
-          recommendation: 'Continue maintaining Board minutes and tracking action items for annual RBI RBS inspection.',
-          severity: 'High' as const,
-          provenance: 'reviewed' as const,
-          created_at: '2023-11-10T11:00:00Z',
-          actions_count: 0
-        }
+        branch_relevance: 'High',
+        timeline: 'Full rollout across all branch terminals by Nov 30, 2026',
+        keywords: ['dlp', 'data loss prevention', 'endpoint security', 'pii protection', 'usb blocking'],
+        extracted_at: '2026-08-01T08:30:00Z',
+        model: 'gemini-2.5-flash',
+        needs_review: false
       },
+      // Req 4: 48-Hour Critical Patching
       {
-        id: 'rbi:req:kyc:01',
-        doc_id: 'rbi:kyc:2016',
-        clause_id: 'rbi:kyc:2016#SEC-56',
-        clause_label: 'Section 56',
-        clause_title: 'Central KYC Records Registry (CKYCR) 3-Day Upload SLA',
-        requirement: 'Regulated entities shall capture the KYC information and upload the KYC record onto the Central KYC Records Registry (CKYCR) within 3 calendar days of commencement of an account-based relationship with the customer.',
-        obligation_type: 'Timeline' as const,
-        applicability: 'All Regulated Entities in India',
-        branch_relevance: 'High' as const,
-        timeline: 'Within 3 calendar days of onboarding',
-        keywords: ['ckyc upload', 'cersai', '3 days timeline', 'rbi kyc'],
-        extracted_at: '2024-01-10T08:30:00Z',
-        mapping: {
-          req_id: 'rbi:req:kyc:01',
-          business_area: 'RBI-BA-03',
-          business_area_name: 'KYC, CKYCR & Digital Customer Identification',
-          policy: 'Master KYC & Customer Identification Policy (POL-RBI-KYC-01)',
-          process: 'Automated CERSAI CKYC Batch Upload and Reconciliation (PRC-KYC-03)',
-          control: 'Daily Automated CKYC SFTP Upload & ACK Reconciliation Job (CTL-KYC-005)',
-          control_type: 'Detective' as const,
-          owner_process: 'RBI-OWN-06',
-          owner_process_name: 'Head of Digital Banking & Payments',
-          owner_process_line: 'First line' as const,
-          owner_control: 'RBI-OWN-03',
-          owner_control_name: 'Principal Officer / MLRO (AML/CFT)',
-          owner_control_line: 'Second line' as const,
-          products_impacted: ['Savings Accounts', 'Current Accounts', 'Fixed Deposits', 'Credit Cards'],
-          tech_systems_impacted: ['Finacle CBS', 'CERSAI CKYC Gateway', 'CRM Onboarding'],
-          evidence_required: 'Daily SFTP upload logs, CKYC ACK reconciliation reports, and pending upload exception dashboard.',
-          classification: 'Partially Compliant' as const,
-          finding: '92% of retail customer CKYC uploads complete within 3 days; rural branch manual files experiencing 4-5 day delays.',
-          recommendation: 'Implement automated centralized batch queue with auto-retry and real-time SMS alerts to branch operations.',
-          severity: 'High' as const,
-          provenance: 'reviewed' as const,
-          created_at: '2024-01-10T09:00:00Z',
-          actions_count: 1
-        }
-      },
-      {
-        id: 'rbi:req:csite:01',
-        doc_id: 'rbi:csite:2016',
-        clause_id: 'rbi:csite:2016#ANN-1',
-        clause_label: 'Annex 1, Para 2',
-        clause_title: 'Mandatory 2 to 6-Hour Cyber Security Incident Reporting to RBI & CERT-In',
-        requirement: 'Banks shall report all unusual cyber security incidents (including ransomware, DDOS, unauthorized SWIFT/payment rail access, data breaches) to the RBI Cyber Security and Information Technology Examination Cell (CSITE) and CERT-In within 2 to 6 hours of occurrence.',
-        obligation_type: 'Timeline' as const,
+        id: 'req:13643:04',
+        clause_id: 'rbi:md:13643#CHV-K-31',
+        doc_id: 'rbi:md:13643',
+        doc_title: 'RBI Cybersecurity, Technology Risk & Assurance Directions, 2026',
+        clause_label: 'Clause 31',
+        chapter: 'Baseline Cybersecurity',
+        clause_title: 'Critical Vulnerability Patching SLA (48 Hours) & CSITE Reporting',
+        requirement: 'Enforce mandatory patching of CVSS 9.0+ critical vulnerabilities on internet-facing assets within 48 hours; report cyber incidents to RBI CSITE within 6 hours.',
+        obligation_type: 'Timeline',
         applicability: 'All Commercial Banks',
-        branch_relevance: 'High' as const,
-        timeline: 'Within 2-6 hours of detection',
-        keywords: ['csite reporting', 'cert-in', 'cyber incident', 'rbi circular'],
-        extracted_at: '2023-01-15T11:30:00Z',
-        mapping: {
-          req_id: 'rbi:req:csite:01',
-          business_area: 'RBI-BA-02',
-          business_area_name: 'Cyber Security Framework & CSITE',
-          policy: 'Cyber Incident Response & Crisis Escalation Policy (POL-RBI-SEC-02)',
-          process: '24/7 SOC Critical Incident Escalation & Regulatory Dispatch (PRC-SEC-04)',
-          control: 'SIEM Incident Triage & Automated CSITE/CERT-In Email Dispatch Formatter (CTL-SEC-011)',
-          control_type: 'Detective' as const,
-          owner_process: 'RBI-OWN-01',
-          owner_process_name: 'Chief Information Security Officer (CISO)',
-          owner_process_line: 'Second line' as const,
-          owner_control: 'RBI-OWN-02',
-          owner_control_name: 'Chief Compliance Officer (CCO)',
-          owner_control_line: 'Second line' as const,
-          products_impacted: ['Internet Banking', 'Mobile Banking', 'NEFT/RTGS', 'UPI Switch'],
-          tech_systems_impacted: ['Splunk SIEM', 'CrowdStrike EDR', 'Secure Email Gateway'],
-          evidence_required: 'Simulated 2-hour reporting drill logs, sample CSITE notification acknowledgment receipts.',
-          classification: 'Compliant' as const,
-          finding: 'SOC playbooks aligned with CSITE format; bi-annual tabletop drills executed with zero SLA breaches.',
-          recommendation: 'Ensure annual refresher training for newly onboarded Tier-1 SOC analysts.',
-          severity: 'Critical' as const,
-          provenance: 'reviewed' as const,
-          created_at: '2023-01-15T12:00:00Z',
-          actions_count: 0
-        }
+        branch_relevance: 'Low',
+        timeline: '48h for Critical, 7 days for High, 6h CSITE notification',
+        keywords: ['vulnerability management', 'patching sla', '48 hours', 'csite reporting', 'soc'],
+        extracted_at: '2026-08-01T08:30:00Z',
+        model: 'gemini-2.5-flash',
+        needs_review: false
       },
+      // Req 5: Credit Risk EWS
       {
-        id: 'rbi:req:dpss:01',
-        doc_id: 'rbi:dpss:2021',
-        clause_id: 'rbi:dpss:2021#SEC-4',
-        clause_label: 'Section 4',
-        clause_title: 'Mandatory Cooling Period & Velocity Limits for New Digital Beneficiaries',
-        requirement: 'For newly added beneficiaries in Internet Banking, Mobile Banking, and UPI, banks must enforce a mandatory minimum 30-minute cooling period during which fund transfer limits are capped to prevent unauthorized account takeover.',
-        obligation_type: 'Process' as const,
-        applicability: 'All Commercial Banks & Payment Banks',
-        branch_relevance: 'High' as const,
-        timeline: 'Mandatory Continuous',
-        keywords: ['cooling period', 'beneficiary addition', 'two factor auth', 'rbi dpss'],
-        extracted_at: '2021-02-20T10:30:00Z',
-        mapping: {
-          req_id: 'rbi:req:dpss:01',
-          business_area: 'RBI-BA-05',
-          business_area_name: 'Digital Payment Security Controls (DPSS)',
-          policy: 'Digital Payment Security & Fraud Risk Policy (POL-RBI-DPS-01)',
-          process: 'Digital Beneficiary Addition & Velocity Control Lifecycle (PRC-DPS-02)',
-          control: 'Core Banking Cooling Period Gate & Limit Enforcer (CTL-DPS-007)',
-          control_type: 'Preventive' as const,
-          owner_process: 'RBI-OWN-06',
-          owner_process_name: 'Head of Digital Banking & Payments',
-          owner_process_line: 'First line' as const,
-          owner_control: 'RBI-OWN-01',
-          owner_control_name: 'Chief Information Security Officer (CISO)',
-          owner_control_line: 'Second line' as const,
-          products_impacted: ['Retail Internet Banking', 'Mobile Banking App', 'UPI Rails'],
-          tech_systems_impacted: ['Finacle Core Banking', 'Payment Switch Gateway'],
-          evidence_required: 'Core system parameter dump showing 30-min timer and ₹50,000 cap; UAT test scripts.',
-          classification: 'Compliant' as const,
-          finding: '30-minute cooling period and ₹50,000 cap strictly enforced across Internet & Mobile banking.',
-          recommendation: 'Extend same cooling restrictions to corporate multi-user beneficiary addition workflows.',
-          severity: 'High' as const,
-          provenance: 'reviewed' as const,
-          created_at: '2021-02-20T11:00:00Z',
-          actions_count: 0
-        }
+        id: 'req:13159:01',
+        clause_id: 'rbi:md:13159#CHIII-D-12',
+        doc_id: 'rbi:md:13159',
+        doc_title: 'RBI Commercial Banks – Credit Risk Management Directions, 2025',
+        clause_label: 'Clause 12',
+        chapter: 'Credit Underwriting & Monitoring',
+        clause_title: 'Automated Early Warning Signals (EWS) for Large Exposures',
+        requirement: 'Automate EWS alerts tracking 42 red flag indicators across CRILC defaults, GST return filing delays, bounced cheques, and rating downgrades for borrowers >= INR 5 Cr.',
+        obligation_type: 'Process',
+        applicability: 'Commercial Banks (excluding SFBs and PBs)',
+        branch_relevance: 'Medium',
+        timeline: 'Continuous real-time alert generation and monthly committee review',
+        keywords: ['ews', 'early warning signals', 'crilc', 'gst data', 'red flags', 'credit monitoring'],
+        extracted_at: '2026-07-02T10:30:00Z',
+        model: 'gemini-2.5-flash',
+        needs_review: false
       },
+      // Req 6: Credit Independent Validation
       {
-        id: 'rbi:req:out:01',
-        doc_id: 'rbi:outsourcing:2023',
-        clause_id: 'rbi:outsourcing:2023#PARA-6',
-        clause_label: 'Para 6',
-        clause_title: 'Core Management Functions Outsourcing Prohibition & Unrestricted Audit Rights',
-        requirement: 'Regulated entities shall not outsource core management functions (including internal audit, KYC compliance decisioning, credit appraisal). All IT outsourcing agreements must contain clauses granting unrestricted right of physical and electronic inspection to RBI supervisors and auditors.',
-        obligation_type: 'Governance' as const,
-        applicability: 'All Commercial Banks & NBFCs',
-        branch_relevance: 'Medium' as const,
-        timeline: 'Mandatory in all contracts',
-        keywords: ['it outsourcing', 'core banking', 'unrestricted audit rights', 'rbi directive'],
-        extracted_at: '2023-04-15T09:30:00Z',
-        mapping: {
-          req_id: 'rbi:req:out:01',
-          business_area: 'RBI-BA-06',
-          business_area_name: 'IT Outsourcing & Cloud Service Providers',
-          policy: 'Information Technology Outsourcing Policy (POL-RBI-OUT-01)',
-          process: 'Vendor Contracting & Mandatory Regulatory Clause Insertion (PRC-OUT-01)',
-          control: 'Legal & Compliance Master Services Agreement (MSA) Clause Verification Gate (CTL-OUT-003)',
-          control_type: 'Preventive' as const,
-          owner_process: 'RBI-OWN-05',
-          owner_process_name: 'Chief Technology Officer (CTO)',
-          owner_process_line: 'First line' as const,
-          owner_control: 'RBI-OWN-02',
-          owner_control_name: 'Chief Compliance Officer (CCO)',
-          owner_control_line: 'Second line' as const,
-          products_impacted: ['Third-Party SaaS', 'Cloud Infrastructure', 'Vendor Contracts'],
-          tech_systems_impacted: ['Vendor Management System (VMS)', 'Contract Repository'],
-          evidence_required: 'Signed vendor MSAs with RBI audit right clause, annual vendor risk assessment reports.',
-          classification: 'Gap' as const,
-          finding: '3 legacy software vendor contracts lack explicit clauses allowing direct RBI supervisory on-site inspection.',
-          recommendation: 'Execute mandatory contract addenda with legacy vendors within 45 days.',
-          severity: 'High' as const,
-          provenance: 'reviewed' as const,
-          created_at: '2023-04-15T10:00:00Z',
-          actions_count: 1
-        }
+        id: 'req:13159:02',
+        clause_id: 'rbi:md:13159#CHIV-A-18',
+        doc_id: 'rbi:md:13159',
+        doc_title: 'RBI Commercial Banks – Credit Risk Management Directions, 2025',
+        clause_label: 'Clause 18',
+        chapter: 'Credit Review & Risk Validation',
+        clause_title: 'Independent 2nd Line Credit Risk Review for Exposures > 25 Cr',
+        requirement: 'Credit proposals exceeding INR 25 Crore must have an independent risk vetting and score validation by Second Line Credit Risk team prior to Credit Committee approval.',
+        obligation_type: 'Assurance',
+        applicability: 'All Commercial Banks',
+        branch_relevance: 'Low',
+        timeline: 'Pre-sanction workflow gate',
+        keywords: ['independent credit review', 'second line', 'sanction gate', 'large credit'],
+        extracted_at: '2026-07-02T10:30:00Z',
+        model: 'gemini-2.5-flash',
+        needs_review: false
+      },
+      // Req 7: RBIA Audit Staff Tenure
+      {
+        id: 'req:13640:01',
+        clause_id: 'rbi:md:13640#CHII-A-7',
+        doc_id: 'rbi:md:13640',
+        doc_title: 'RBI Commercial Banks – Internal Audit Function & RBIA Directions, 2026',
+        clause_label: 'Clause 7',
+        chapter: 'Board & Management Oversight',
+        clause_title: 'Internal Audit Staff Minimum 3-Year Tenure Policy',
+        requirement: 'Establish formal HR policy prescribing minimum 3-year tenure for internal audit professionals and cooling-off period of 2 years before auditing prior operational departments.',
+        obligation_type: 'Governance',
+        applicability: 'Commercial Banks',
+        branch_relevance: 'Low',
+        timeline: 'Incorporate in Annual HR Policy review by Sept 2026',
+        keywords: ['internal audit', 'staff tenure', 'cooling off', 'audit independence', 'hr policy'],
+        extracted_at: '2026-06-20T11:30:00Z',
+        model: 'gemini-2.5-flash',
+        needs_review: false
+      },
+      // Req 8: KYC Beneficial Ownership 10%
+      {
+        id: 'req:2026:54:01',
+        clause_id: 'rbi:cir:2026:54#PARA-3',
+        doc_id: 'rbi:cir:2026:54',
+        doc_title: 'RBI KYC Direction 2026 – Beneficial Ownership Amendments',
+        clause_label: 'Paragraph 3',
+        chapter: 'KYC Amendments',
+        clause_title: '10% Beneficial Ownership Identification Threshold',
+        requirement: 'Update onboarding CDD systems to identify and verify natural persons holding 10% or more capital/profits in companies, LLPs, and trusts, and perform PEP screening.',
+        obligation_type: 'Screening',
+        applicability: 'All Regulated Entities',
+        branch_relevance: 'High',
+        timeline: 'System update by Oct 15, 2026; re-KYC remediation for existing portfolio by March 31, 2027',
+        keywords: ['beneficial ownership', 'bo 10 percent', 'cdd', 'pep screening', 'kyc policy'],
+        extracted_at: '2026-08-15T10:00:00Z',
+        model: 'gemini-2.5-flash',
+        needs_review: false
+      },
+      // Req 9: V-CIP Live Geotagging & AI Liveness
+      {
+        id: 'req:2026:54:02',
+        clause_id: 'rbi:cir:2026:54#PARA-7',
+        doc_id: 'rbi:cir:2026:54',
+        doc_title: 'RBI KYC Direction 2026 – Video KYC (V-CIP) Technical Controls',
+        clause_label: 'Paragraph 7',
+        chapter: 'V-CIP Controls',
+        clause_title: 'V-CIP Territory Geo-Fencing & AI Biometric Anti-Spoofing',
+        requirement: 'Incorporate live GPS coordinate validation restricting V-CIP calls to India boundaries and implement ISO 30107-3 compliant active/passive facial liveness detection in video KYC apps.',
+        obligation_type: 'Process',
+        applicability: 'Banks offering digital/remote account opening',
+        branch_relevance: 'High',
+        timeline: 'Mandatory enforcement by Nov 01, 2026',
+        keywords: ['v-cip', 'video kyc', 'geotagging', 'facial liveness', 'anti spoofing', 'deepfake'],
+        extracted_at: '2026-08-15T10:00:00Z',
+        model: 'gemini-2.5-flash',
+        needs_review: false
+      },
+      // Req 10: LCR Digital Run-Off Factor
+      {
+        id: 'req:2026:88:01',
+        clause_id: 'rbi:cir:2026:88#PARA-4',
+        doc_id: 'rbi:cir:2026:88',
+        doc_title: 'RBI Liquidity Coverage Ratio (LCR) Digital Deposit Run-off Norms',
+        clause_label: 'Paragraph 4',
+        chapter: 'LCR Computations',
+        clause_title: 'Additional 5% Run-Off Factor for Internet & Mobile Enabled Deposits',
+        requirement: 'Recalculate 30-day net cash outflows by applying an additional 5% run-off factor (total 10%) on retail deposits connected to digital channels, maintaining additional High-Quality Liquid Assets (HQLA).',
+        obligation_type: 'Prudential',
+        applicability: 'All Commercial Banks',
+        branch_relevance: 'Low',
+        timeline: 'Effective from Jan 01, 2027; quarterly ALCO reporting',
+        keywords: ['lcr', 'liquidity coverage ratio', 'run-off factor', 'hqla buffer', 'digital deposits', 'alco'],
+        extracted_at: '2026-08-23T06:30:00Z',
+        model: 'gemini-2.5-flash',
+        needs_review: false
       }
     ];
 
-    // Store requirements and mappings
-    [...samaReqsData, ...rbiReqsData].forEach((r) => {
-      const { mapping, ...req } = r;
-      this.requirements.set(req.id, req);
-      if (mapping) {
-        this.mappings.set(mapping.req_id, mapping);
-      }
-    });
+    sampleReqs.forEach(req => this.requirements.set(req.id, req));
 
-    // 7. Pre-seed Remediation Actions for SAMA and RBI
-    const actionsSeed: RemediationAction[] = [
-      // SAMA Actions
+    // 5. Pre-seed Mappings (Impact Assessment & Gap Evaluations)
+    const sampleMappings: ReqMapping[] = [
       {
-        id: 'ACT-SAMA-01',
-        req_id: 'req:aml:01',
-        requirement_summary: 'Identify, verify, and document identity of natural persons owning 5%+ beneficial ownership in corporate accounts.',
-        title: 'Reconfigure Oracle Flexcube & Fenergo CLM for 5% Beneficial Ownership Threshold',
-        description: 'Update CBS schema parameters and digital corporate onboarding validation rules from 20% to 5%. Re-screen existing commercial client database and upload revised SOP to 2nd Line Compliance.',
-        owner_id: 'SAMA-OWN-05',
-        owner_name: 'Khalid Al-Zahrani (Head of Digital Banking & Channels)',
-        approver_id: 'SAMA-OWN-02',
-        approver_name: 'Ahmed Al-Mansoor (Chief Compliance Officer)',
-        status: 'In Progress',
-        priority: 'Critical',
-        due_date: '2026-09-10',
-        target_quarter: 'Q3 2026',
-        sla_status: 'On Track',
-        created_at: '2026-07-05T10:00:00Z',
-        updated_at: '2026-08-20T14:00:00Z',
-        regulator: 'SAMA',
-        milestones: [
-          { title: 'Core Banking parameter update script approved in UAT', completed: true, target_date: '2026-08-15' },
-          { title: 'Corporate CLM onboarding portal workflow patch deployment', completed: false, target_date: '2026-09-01' },
-          { title: 'Independent 2nd Line Compliance validation signoff', completed: false, target_date: '2026-09-10' }
-        ],
-        evidence_items: [
-          {
-            id: 'EVD-SAMA-01',
-            action_id: 'ACT-SAMA-01',
-            file_name: 'Oracle_Flexcube_5pct_UBO_UAT_Signoff_Signed.pdf',
-            file_type: 'application/pdf',
-            file_size: 2450000,
-            uploaded_at: '2026-08-16T11:30:00Z',
-            uploaded_by: 'Khalid Al-Zahrani',
-            sha256_hash: '9f83ab293847aef12345bcdef9876543210123456789abcdef0123456789abcd',
-            status: 'Verified',
-            verification_notes: 'Verified against SAMA AML/CFT Rules 2026 clause 14.2. UAT test results show 5% trigger verified.',
-            verified_by: 'Ahmed Al-Mansoor (CCO)',
-            verified_at: '2026-08-18T09:00:00Z'
-          }
-        ]
+        req_id: 'req:13643:01',
+        business_area: 'BA-01',
+        business_area_name: 'KYC Governance & Policy',
+        policy: 'Information Security & Cybersecurity Policy 2026 (POL-IT-01)',
+        process: 'Annual Board IT Strategy & Policy Governance Process (PRC-GOV-03)',
+        control: 'Board IT Strategy Committee Annual Approval Gate (CTL-IT-001)',
+        control_type: 'Preventive',
+        owner_process: 'OWN-13',
+        owner_process_name: 'Head — Digital Banking & Technology',
+        owner_process_line: 'First line',
+        owner_control: 'OWN-11',
+        owner_control_name: 'Chief Risk Officer',
+        owner_control_line: 'Second line',
+        products_impacted: ['Core Banking', 'Internet Banking Portal', 'Mobile Banking App'],
+        tech_systems_impacted: ['Board Portal', 'Policy Management System'],
+        evidence_required: 'Board resolution copy, signed Cyber Crisis Management Plan (CCMP), and IT Strategy Committee minutes.',
+        classification: 'Compliant',
+        finding: 'Board approved the revised Cybersecurity Policy and CCMP in June 2026 meeting; annual schedule is institutionalized.',
+        recommendation: 'Ensure annual re-tablement schedule is tracked in Board Secretariat calendar for Q2 2027.',
+        severity: 'Low',
+        provenance: 'reviewed',
+        reviewed_by: 'compliance.officer@bank.com',
+        reviewed_at: '2026-08-20T10:00:00Z',
+        created_at: '2026-08-01T09:00:00Z'
       },
       {
-        id: 'ACT-SAMA-02',
-        req_id: 'req:csf:02',
-        requirement_summary: 'Regulated banks must immediately notify SAMA CTI center within 2 hours of detecting Sev 1/2 cyber incident.',
-        title: 'Deploy Automated Palo Alto XSOAR Playbook for Instant SAMA CTI Portal XML Dispatch',
-        description: 'Build automated SOAR integration with SAMA Cyber Threat Intelligence (CTI) API to trigger incident dispatch payload within 45 minutes of SIEM correlation alert.',
-        owner_id: 'SAMA-OWN-01',
-        owner_name: 'Fahad Al-Husseini (CISO)',
-        approver_id: 'SAMA-OWN-02',
-        approver_name: 'Ahmed Al-Mansoor (Chief Compliance Officer)',
-        status: 'Assigned',
-        priority: 'Critical',
-        due_date: '2026-09-25',
-        target_quarter: 'Q3 2026',
-        sla_status: 'On Track',
-        created_at: '2026-07-22T08:00:00Z',
-        updated_at: '2026-08-10T12:00:00Z',
-        regulator: 'SAMA',
-        milestones: [
-          { title: 'SAMA CTI API certificate configuration', completed: true, target_date: '2026-08-15' },
-          { title: 'XSOAR simulated drill execution', completed: false, target_date: '2026-09-15' },
-          { title: 'CISO emergency operational procedure update', completed: false, target_date: '2026-09-25' }
-        ],
-        evidence_items: []
+        req_id: 'req:13643:02',
+        business_area: 'BA-13',
+        business_area_name: 'Cybersecurity & Tech Risk',
+        policy: 'Enterprise Risk Management Policy (POL-RM-02)',
+        process: 'CISO Independent Reporting & Governance Mechanism (PRC-SEC-01)',
+        control: 'Direct Executive Line of Reporting to CRO (CTL-SEC-004)',
+        control_type: 'Preventive',
+        owner_process: 'OWN-13',
+        owner_process_name: 'Head — Digital Banking & Technology',
+        owner_process_line: 'First line',
+        owner_control: 'OWN-11',
+        owner_control_name: 'Chief Risk Officer',
+        owner_control_line: 'Second line',
+        products_impacted: ['All Bank Operations'],
+        tech_systems_impacted: ['HRMS Org Structure'],
+        evidence_required: 'HR Appointment Letter, Org Hierarchy Chart showing CISO reporting to CRO, and Board minutes.',
+        classification: 'Compliant',
+        finding: 'CISO reporting line was restructured to CRO in January 2026; CISO does not hold operational IT responsibilities.',
+        recommendation: 'Maintain direct access of CISO to the Board IT Strategy Committee.',
+        severity: 'Low',
+        provenance: 'sourced',
+        reviewed_by: 'cro@bank.com',
+        reviewed_at: '2026-08-18T14:20:00Z',
+        created_at: '2026-08-01T09:00:00Z'
       },
       {
-        id: 'ACT-SAMA-03',
-        req_id: 'req:obk:01',
-        requirement_summary: 'FAPI 1.0 Advanced Security & mTLS for Open Banking PISP APIs with customer consent lifecycle.',
-        title: 'Integrate Mobile Banking Customer Open Banking Consent Management Dashboard',
-        description: 'Implement real-time consumer dashboard in Mobile Banking to view, approve, and instantly revoke Open Banking Payment Initiation Service (PISP) authorizations.',
-        owner_id: 'SAMA-OWN-05',
-        owner_name: 'Khalid Al-Zahrani (Head of Digital Banking & Channels)',
-        approver_id: 'SAMA-OWN-04',
-        approver_name: 'Dr. Tariq Al-Ghamdi (CRO)',
-        status: 'In Progress',
-        priority: 'High',
+        req_id: 'req:13643:03',
+        business_area: 'BA-13',
+        business_area_name: 'Cybersecurity & Tech Risk',
+        policy: 'Data Classification and Protection Policy (POL-SEC-09)',
+        process: 'Endpoint & Network Data Loss Prevention Operations (PRC-SEC-12)',
+        control: 'Automated DLP Policy Blocking Unencrypted PII at Endpoints (CTL-SEC-042)',
+        control_type: 'Preventive',
+        owner_process: 'OWN-13',
+        owner_process_name: 'Head — Digital Banking & Technology',
+        owner_process_line: 'First line',
+        owner_control: 'OWN-08',
+        owner_control_name: 'Chief Compliance Officer',
+        owner_control_line: 'Second line',
+        products_impacted: ['Branch Terminals', 'Corporate Email', 'Internal File Shares'],
+        tech_systems_impacted: ['Symantec DLP / Forcepoint', 'Microsoft 365 Purview', 'Endpoint Antivirus Agent'],
+        evidence_required: 'DLP rule base export, quarterly DLP block incident reports, and branch terminal agent coverage report (100%).',
+        classification: 'Partially Compliant',
+        finding: 'Network and email DLP are active, but 18% of older branch teller workstations in regional hubs lack endpoint USB blocking agents.',
+        recommendation: 'Roll out updated DLP endpoint agent patch across all 420 branch tellers by Nov 30, 2026 with central agent health monitoring.',
+        severity: 'High',
+        provenance: 'reviewed',
+        reviewed_by: 'ciso@bank.com',
+        reviewed_at: '2026-08-25T16:00:00Z',
+        created_at: '2026-08-01T09:00:00Z'
+      },
+      {
+        req_id: 'req:13643:04',
+        business_area: 'BA-13',
+        business_area_name: 'Cybersecurity & Tech Risk',
+        policy: 'Vulnerability and Patch Management Policy (POL-SEC-05)',
+        process: 'Emergency Vulnerability Remediation & CSITE Incident Reporting (PRC-SEC-07)',
+        control: 'Automated 48-Hour Critical Patch SLA Tracking (CTL-SEC-018)',
+        control_type: 'Corrective',
+        owner_process: 'OWN-13',
+        owner_process_name: 'Head — Digital Banking & Technology',
+        owner_process_line: 'First line',
+        owner_control: 'OWN-11',
+        owner_control_name: 'Chief Risk Officer',
+        owner_control_line: 'Second line',
+        products_impacted: ['Internet Banking', 'Payment Gateways', 'API Gateways'],
+        tech_systems_impacted: ['Qualys / Tenable VM', 'SOC SIEM', 'Jira Service Management'],
+        evidence_required: 'Monthly Vulnerability Scan reports, SLA closure evidence (<48h), and RBI CSITE notification log.',
+        classification: 'Partially Compliant',
+        finding: 'Patching for internal servers meets SLA, but perimeter web applications took average 86 hours in Q2 due to vendor change freeze windows.',
+        recommendation: 'Institute an expedited Emergency Change Advisory Board (eCAB) procedure with 24-hour fast-track vendor deployment SLA.',
+        severity: 'High',
+        provenance: 'reviewed',
+        reviewed_by: 'ciso@bank.com',
+        reviewed_at: '2026-08-26T11:00:00Z',
+        created_at: '2026-08-01T09:00:00Z'
+      },
+      {
+        req_id: 'req:13159:01',
+        business_area: 'BA-14',
+        business_area_name: 'Credit Monitoring & Stressed Assets',
+        policy: 'Credit Risk and Early Warning System Policy (POL-CR-04)',
+        process: 'Automated EWS Signal Extraction & Red Flag Alert Workflow (PRC-CR-08)',
+        control: 'Automated Daily Batch Ingestion of CRILC & GST EWS Triggers (CTL-CR-021)',
+        control_type: 'Detective',
+        owner_process: 'OWN-14',
+        owner_process_name: 'Head — Credit Monitoring',
+        owner_process_line: 'First line',
+        owner_control: 'OWN-19',
+        owner_control_name: 'Head — Credit Risk',
+        owner_control_line: 'Second line',
+        products_impacted: ['Commercial Working Capital', 'Term Loans', 'Trade Credit'],
+        tech_systems_impacted: ['Early Warning System (EWS Engine)', 'Loan Management System (LMS)', 'CRILC Integration API'],
+        evidence_required: 'EWS system architecture document, sample red-flag escalation logs, and monthly Credit Monitoring Committee minutes.',
+        classification: 'Gap',
+        finding: 'EWS system currently integrates only CRILC data; real-time GST return filing delays and MCA charge creation triggers are not yet automated and rely on quarterly manual analyst reviews.',
+        recommendation: 'Commission automated API integration with GSTN and MCA21 databases into the bank EWS engine for all accounts above INR 5 Crore.',
+        severity: 'Critical',
+        provenance: 'reviewed',
+        reviewed_by: 'head.credit@bank.com',
+        reviewed_at: '2026-08-22T09:30:00Z',
+        created_at: '2026-07-02T11:00:00Z'
+      },
+      {
+        req_id: 'req:13159:02',
+        business_area: 'BA-19',
+        business_area_name: 'Credit Risk & Capital Planning',
+        policy: 'Credit Underwriting and Sanctioning Policy (POL-CR-01)',
+        process: 'Second Line Independent Credit Risk Vetting (PRC-CR-02)',
+        control: 'Independent Pre-Sanction Credit Risk Assessment Sign-off (CTL-CR-007)',
+        control_type: 'Preventive',
+        owner_process: 'OWN-14',
+        owner_process_name: 'Head — Credit Monitoring',
+        owner_process_line: 'First line',
+        owner_control: 'OWN-19',
+        owner_control_name: 'Head — Credit Risk',
+        owner_control_line: 'Second line',
+        products_impacted: ['Corporate Loans', 'Syndicated Facilities', 'Infrastructure Financing'],
+        tech_systems_impacted: ['Loan Origination System (LOS)', 'Credit Rating Tool (RAM / Crisil)'],
+        evidence_required: 'Credit Committee appraisal notes with attached independent 2nd line risk vetting sheets.',
+        classification: 'Compliant',
+        finding: 'All corporate credit proposals > INR 25 Cr have mandatory LOS workflow approval gate requiring Head of Credit Risk sign-off.',
+        recommendation: 'Continue quarterly audit sampling of sanctioned corporate files.',
+        severity: 'Low',
+        provenance: 'sourced',
+        reviewed_by: 'head.creditrisk@bank.com',
+        reviewed_at: '2026-08-15T15:00:00Z',
+        created_at: '2026-07-02T11:00:00Z'
+      },
+      {
+        req_id: 'req:13640:01',
+        business_area: 'BA-20',
+        business_area_name: 'Internal Audit & Assurance',
+        policy: 'Internal Audit Charter & HR Governance Policy (POL-AUD-01)',
+        process: 'Audit Staffing, Tenure & Rotational Mobility Process (PRC-AUD-04)',
+        control: 'Mandatory Minimum 3-Year Service Tenure in Internal Audit (CTL-AUD-009)',
+        control_type: 'Preventive',
+        owner_process: 'OWN-12',
+        owner_process_name: 'Head — Internal Audit',
+        owner_process_line: 'Third line',
+        owner_control: 'OWN-16',
+        owner_control_name: 'Company Secretary / Board Secretariat',
+        owner_control_line: 'Governance',
+        products_impacted: ['All Bank Functions'],
+        tech_systems_impacted: ['HRMS Employee Lifecycle Module'],
+        evidence_required: 'Audit Committee approved Audit Charter, HR transfer policy guidelines, and tenure audit report.',
+        classification: 'Partially Compliant',
+        finding: 'Audit Charter states 3-year tenure, but 3 senior IT auditors were transferred to technology DevOps role after only 14 months due to critical project staffing crunch.',
+        recommendation: 'Enforce strict Board Audit Committee exception approval prior to premature transfer of internal audit personnel.',
+        severity: 'Medium',
+        provenance: 'reviewed',
+        reviewed_by: 'head.audit@bank.com',
+        reviewed_at: '2026-08-10T12:00:00Z',
+        created_at: '2026-06-20T12:00:00Z'
+      },
+      {
+        req_id: 'req:2026:54:01',
+        business_area: 'BA-05',
+        business_area_name: 'Beneficial Ownership & CDD',
+        policy: 'KYC, AML & CFT Master Policy 2026 (POL-KYC-01)',
+        process: 'Non-Individual Customer Onboarding & Beneficial Owner Due Diligence (PRC-KYC-05)',
+        control: '10% BO Threshold Rule Engine & PEP Screening Verification (CTL-KYC-014)',
+        control_type: 'Preventive',
+        owner_process: 'OWN-02',
+        owner_process_name: 'Branch Operations Manager',
+        owner_process_line: 'First line',
+        owner_control: 'OWN-06',
+        owner_control_name: 'Principal Officer (AML)',
+        owner_control_line: 'Second line',
+        products_impacted: ['Current Accounts', 'Corporate Banking', 'Trade Finance', 'Escrow Accounts'],
+        tech_systems_impacted: ['Finacle CBS', 'AML Onboarding Portal (Accuity / LexisNexis)'],
+        evidence_required: 'Updated KYC policy document, CBS parameter configuration change log, and sample onboarding dossiers.',
+        classification: 'Gap',
+        finding: 'Current onboarding form and Finacle rule engine still capture BO at legacy 25% threshold for corporate clients; IT parameter change is pending release in Sprint 44 (Oct 10).',
+        recommendation: 'Expedite CBS parameter update to 10% threshold by Oct 01, 2026, and issue branch operational advisory for interim manual checking.',
+        severity: 'Critical',
+        provenance: 'reviewed',
+        reviewed_by: 'aml.officer@bank.com',
+        reviewed_at: '2026-08-28T17:00:00Z',
+        created_at: '2026-08-15T11:00:00Z'
+      },
+      {
+        req_id: 'req:2026:54:02',
+        business_area: 'BA-04',
+        business_area_name: 'Digital & Remote Onboarding',
+        policy: 'Digital Customer Onboarding & V-CIP Policy (POL-KYC-03)',
+        process: 'V-CIP Video Session Execution & Biometric Liveness Verification (PRC-KYC-09)',
+        control: 'Automated GPS Geo-boundary Check & ISO Liveness AI Filter (CTL-KYC-033)',
+        control_type: 'Preventive',
+        owner_process: 'OWN-13',
+        owner_process_name: 'Head — Digital Banking & Technology',
+        owner_process_line: 'First line',
+        owner_control: 'OWN-09',
+        owner_control_name: 'Head — AML & KYC Cell',
+        owner_control_line: 'Second line',
+        products_impacted: ['Savings Accounts', 'Credit Cards', 'Digital Personal Loans'],
+        tech_systems_impacted: ['V-CIP Video KYC App (HyperVerge / IDfy)', 'API Gateway'],
+        evidence_required: 'V-CIP vendor technical certification (ISO 30107-3), audit logs of rejected spoofed attempts, and geo-location validation reports.',
+        classification: 'Partially Compliant',
+        finding: 'AI Liveness detection is active, but geo-tagging currently relies on client IP address geolocation rather than device GPS coordinates.',
+        recommendation: 'Enable mandatory browser/mobile native GPS coordinate permissions in V-CIP SDK to block VPN / spoofed overseas IP proxies.',
+        severity: 'High',
+        provenance: 'reviewed',
+        reviewed_by: 'aml.officer@bank.com',
+        reviewed_at: '2026-08-28T17:30:00Z',
+        created_at: '2026-08-15T11:00:00Z'
+      },
+      {
+        req_id: 'req:2026:88:01',
+        business_area: 'BA-18',
+        business_area_name: 'Treasury / ALM & Liquidity Risk',
+        policy: 'Liquidity Risk Management & Asset Liability Management Policy (POL-TR-03)',
+        process: 'Daily Liquidity Coverage Ratio (LCR) Computation & Outflow Stress Testing (PRC-TR-06)',
+        control: '10% Run-Off Factor Model in Treasury ALM Engine for IMB Deposits (CTL-TR-017)',
+        control_type: 'Detective',
+        owner_process: 'OWN-18',
+        owner_process_name: 'Head — Treasury / ALM',
+        owner_process_line: 'First line',
+        owner_control: 'OWN-11',
+        owner_control_name: 'Chief Risk Officer',
+        owner_control_line: 'Second line',
+        products_impacted: ['Internet Retail Deposits', 'Mobile Savings Accounts'],
+        tech_systems_impacted: ['OFSAA ALM / Calypso Treasury Suite', 'Finacle Core Banking'],
+        evidence_required: 'ALCO meeting presentation, LCR model calibration document, and simulated HQLA buffer calculation sheet.',
+        classification: 'To Be Confirmed',
+        finding: 'Treasury team is modeling the balance sheet impact of additional 5% run-off factor on digital deposits; preliminary estimation indicates need for INR 380 Cr additional HQLA government securities buffer.',
+        recommendation: 'Present finalized LCR simulation and capital/liquidity provisioning plan to Board Risk Management Committee in September meeting.',
+        severity: 'High',
+        provenance: 'seeded',
+        reviewed_by: 'treasury.head@bank.com',
+        reviewed_at: '2026-08-26T09:00:00Z',
+        created_at: '2026-08-23T07:00:00Z'
+      }
+    ];
+
+    sampleMappings.forEach(m => this.mappings.set(m.req_id, m));
+
+    // 6. Pre-seed Action Items & Evidence
+    const sampleActions: RemediationAction[] = [
+      {
+        id: 'ACT-2026-001',
+        req_id: 'req:13643:03',
+        doc_id: 'rbi:md:13643',
+        doc_title: 'RBI Cybersecurity & Tech Risk Directions, 2026',
+        clause_label: 'Clause 24 (DLP)',
+        requirement_summary: 'Mandate endpoint DLP with automated USB & PII blocking across all bank workstations.',
+        title: 'Deploy Endpoint DLP Agent Patch on 420 Branch Teller Workstations',
+        description: 'Complete centralized deployment of Symantec/Forcepoint DLP agent on remaining 18% branch teller PCs and configure automated blocking for USB mass storage and unencrypted PAN/Aadhaar.',
+        owner_id: 'OWN-13',
+        owner_name: 'Head — Digital Banking & Technology',
+        owner_line: 'First line',
+        approver_id: 'OWN-11',
+        approver_name: 'Chief Risk Officer',
         due_date: '2026-11-15',
-        target_quarter: 'Q4 2026',
-        sla_status: 'On Track',
-        created_at: '2026-05-25T11:00:00Z',
-        updated_at: '2026-08-12T09:30:00Z',
-        regulator: 'SAMA',
-        milestones: [
-          { title: 'Mobile UI Wireframes & SAMA Brand Guideline Approval', completed: true, target_date: '2026-06-30' },
-          { title: 'OAuth2 Token Revocation API Integration', completed: true, target_date: '2026-08-10' },
-          { title: 'End-to-end security penetration testing', completed: false, target_date: '2026-10-30' }
-        ],
-        evidence_items: []
-      },
-
-      // RBI Actions
-      {
-        id: 'ACT-RBI-01',
-        req_id: 'rbi:req:kyc:01',
-        requirement_summary: 'Upload KYC record onto CKYCR within 3 calendar days of customer account opening.',
-        title: 'Automate CERSAI CKYC Real-Time API Gateway & Exception Queue for Rural Branches',
-        description: 'Replace manual daily batch SFTP upload with real-time CKYCR API integration on Finacle core banking. Configure automated fallback retry and branch manager escalation alerts for pending documents.',
-        owner_id: 'RBI-OWN-06',
-        owner_name: 'Pooja Agarwal (Head of Digital Banking & Payments)',
-        approver_id: 'RBI-OWN-03',
-        approver_name: 'Sunil Nair (Principal Officer / MLRO)',
-        status: 'In Progress',
         priority: 'High',
-        due_date: '2026-09-30',
-        target_quarter: 'Q3 2026',
-        sla_status: 'On Track',
-        created_at: '2024-01-15T10:00:00Z',
-        updated_at: '2026-08-15T11:00:00Z',
-        regulator: 'RBI',
-        milestones: [
-          { title: 'CERSAI API connectivity in UAT environment', completed: true, target_date: '2026-06-30' },
-          { title: 'Branch exception monitoring queue implementation', completed: true, target_date: '2026-08-10' },
-          { title: 'Production rollout across all 850 branches', completed: false, target_date: '2026-09-30' }
-        ],
+        status: 'In Progress',
+        progress_pct: 65,
+        created_at: '2026-08-26T10:00:00Z',
+        updated_at: '2026-08-29T15:00:00Z',
+        remediation_notes: 'Rollout completed across North & West zone branches (290/420 PCs). South and East zone scheduled for next weekend maintenance.',
         evidence_items: [
           {
-            id: 'EVD-RBI-01',
-            action_id: 'ACT-RBI-01',
-            file_name: 'CERSAI_CKYC_API_UAT_Conformance_Report.pdf',
+            id: 'EVD-001',
+            action_id: 'ACT-2026-001',
+            title: 'North Zone DLP Agent Deployment Status Report',
+            file_name: 'DLP_Deployment_NorthZone_Aug2026.pdf',
             file_type: 'application/pdf',
-            file_size: 1890000,
-            uploaded_at: '2026-08-12T14:20:00Z',
-            uploaded_by: 'Pooja Agarwal',
-            sha256_hash: 'a1b2c3d4e5f60718293a4b5c6d7e8f9012345678abcdef9012345678abcdef01',
-            status: 'Verified',
-            verification_notes: 'Verified compliance against RBI Master Direction KYC Para 56. 3-day upload SLA achieved in testing.',
-            verified_by: 'Sunil Nair (MLRO)',
-            verified_at: '2026-08-14T10:30:00Z'
+            file_size: '2.4 MB',
+            uploaded_by: 'it.infrastructure@bank.com',
+            uploaded_at: '2026-08-28T14:30:00Z',
+            verification_status: 'Verified',
+            verified_by: 'ciso@bank.com',
+            verified_at: '2026-08-29T09:15:00Z',
+            notes: 'Verified 100% agent coverage and successful USB blocking test on 145 branch terminals in North zone.',
+            hash_checksum: 'sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069'
           }
         ]
       },
       {
-        id: 'ACT-RBI-02',
-        req_id: 'rbi:req:out:01',
-        requirement_summary: 'Execute mandatory vendor addenda ensuring unrestricted right of physical/electronic audit for RBI supervisors.',
-        title: 'Execute Mandatory RBI Supervisory Audit Addenda for 3 Legacy IT Vendors',
-        description: 'Issue formal legal amendments to legacy IT vendors (Data Center Co-location, SMS Gateway Provider, ATM Switch Maintenance) incorporating unconditional on-site audit inspection clauses for RBI and internal auditors.',
-        owner_id: 'RBI-OWN-05',
-        owner_name: 'Anand Kulkarni (Chief Technology Officer)',
-        approver_id: 'RBI-OWN-02',
-        approver_name: 'Meera Venkataraman (Chief Compliance Officer)',
-        status: 'Assigned',
-        priority: 'High',
+        id: 'ACT-2026-002',
+        req_id: 'req:13159:01',
+        doc_id: 'rbi:md:13159',
+        doc_title: 'RBI Credit Risk Management Directions, 2025',
+        clause_label: 'Clause 12 (EWS)',
+        requirement_summary: 'Automate Early Warning Signals (EWS) integrated with CRILC, GSTN, and MCA registry for loans >= INR 5 Cr.',
+        title: 'Integrate Automated GSTN & MCA21 Real-time Feed into EWS Engine',
+        description: 'Procure and integrate GSTN return filing delay API and MCA charge registration webhook with the bank internal Early Warning System (EWS) to eliminate manual credit analyst dependency.',
+        owner_id: 'OWN-14',
+        owner_name: 'Head — Credit Monitoring',
+        owner_line: 'First line',
+        approver_id: 'OWN-19',
+        approver_name: 'Head — Credit Risk',
+        due_date: '2026-09-30',
+        priority: 'Critical',
+        status: 'In Progress',
+        progress_pct: 40,
+        created_at: '2026-08-23T11:00:00Z',
+        updated_at: '2026-08-27T16:00:00Z',
+        remediation_notes: 'Vendor API sandbox testing underway. Middleware integration completed for GSTN filing status trigger.',
+        evidence_items: [
+          {
+            id: 'EVD-002',
+            action_id: 'ACT-2026-002',
+            title: 'GSTN API Sandbox Integration Test Log',
+            file_name: 'EWS_GSTN_API_Integration_Test_Signoff.pdf',
+            file_type: 'application/pdf',
+            file_size: '1.8 MB',
+            uploaded_by: 'credit.monitoring@bank.com',
+            uploaded_at: '2026-08-27T15:45:00Z',
+            verification_status: 'Pending',
+            notes: 'Test log demonstrating successful receipt of GST return filing delay alerts for 20 sample corporate test accounts.'
+          }
+        ]
+      },
+      {
+        id: 'ACT-2026-003',
+        req_id: 'req:2026:54:01',
+        doc_id: 'rbi:cir:2026:54',
+        doc_title: 'RBI KYC Direction 2026 – Beneficial Ownership Amendments',
+        clause_label: 'Paragraph 3 (BO 10%)',
+        requirement_summary: 'Revise Beneficial Owner identification threshold from 25% to 10% for non-individual clients.',
+        title: 'Update CBS Onboarding Parameter to 10% BO Threshold & Issue Branch Operational Circular',
+        description: 'Deploy CBS system configuration parameter changing BO threshold from 25% to 10%, update corporate onboarding form fields, and publish mandatory branch operational advisory.',
+        owner_id: 'OWN-02',
+        owner_name: 'Branch Operations Manager',
+        owner_line: 'First line',
+        approver_id: 'OWN-06',
+        approver_name: 'Principal Officer (AML)',
         due_date: '2026-09-15',
-        target_quarter: 'Q3 2026',
-        sla_status: 'On Track',
-        created_at: '2024-04-20T09:00:00Z',
-        updated_at: '2026-08-01T15:00:00Z',
-        regulator: 'RBI',
-        milestones: [
-          { title: 'Legal draft template vetted by Compliance', completed: true, target_date: '2026-07-15' },
-          { title: 'Formal dispatch to vendor executive management', completed: true, target_date: '2026-08-01' },
-          { title: 'Countersigned MSA execution and repository upload', completed: false, target_date: '2026-09-15' }
-        ],
+        priority: 'Critical',
+        status: 'In Progress',
+        progress_pct: 80,
+        created_at: '2026-08-16T12:00:00Z',
+        updated_at: '2026-08-29T11:30:00Z',
+        remediation_notes: 'Branch operational circular drafted and approved by CCO. CBS parameter change tested in UAT environment and scheduled for production deployment on Sept 05.',
+        evidence_items: [
+          {
+            id: 'EVD-003',
+            action_id: 'ACT-2026-003',
+            title: 'Approved Branch Operational Circular on 10% BO Norms',
+            file_name: 'Circular_OPS_2026_44_BO_10Percent.pdf',
+            file_type: 'application/pdf',
+            file_size: '890 KB',
+            uploaded_by: 'compliance.team@bank.com',
+            uploaded_at: '2026-08-29T11:00:00Z',
+            verification_status: 'Verified',
+            verified_by: 'aml.principalofficer@bank.com',
+            verified_at: '2026-08-29T14:00:00Z',
+            notes: 'Circular approved and signed by Chief Compliance Officer for bank-wide branch dissemination.'
+          }
+        ]
+      },
+      {
+        id: 'ACT-2026-004',
+        req_id: 'req:2026:54:02',
+        doc_id: 'rbi:cir:2026:54',
+        doc_title: 'RBI KYC Direction 2026 – V-CIP Technical Controls',
+        clause_label: 'Paragraph 7 (V-CIP Geotagging)',
+        requirement_summary: 'Enforce live device GPS geotagging within India and ISO 30107-3 biometric liveness in V-CIP calls.',
+        title: 'Upgrade V-CIP Mobile SDK with Native GPS Validation & Biometric Liveness Filter',
+        description: 'Upgrade V-CIP vendor mobile SDK to Version 4.2 with mandatory device GPS coordinate check to prevent VPN / overseas proxy spoofing.',
+        owner_id: 'OWN-13',
+        owner_name: 'Head — Digital Banking & Technology',
+        owner_line: 'First line',
+        approver_id: 'OWN-08',
+        approver_name: 'Chief Compliance Officer',
+        due_date: '2026-10-15',
+        priority: 'High',
+        status: 'Assigned',
+        progress_pct: 25,
+        created_at: '2026-08-16T14:00:00Z',
+        updated_at: '2026-08-22T10:00:00Z',
+        remediation_notes: 'Vendor has delivered new SDK build. Security architecture review currently in progress.',
         evidence_items: []
+      },
+      {
+        id: 'ACT-2026-005',
+        req_id: 'req:13643:04',
+        doc_id: 'rbi:md:13643',
+        doc_title: 'RBI Cybersecurity & Tech Risk Directions, 2026',
+        clause_label: 'Clause 31 (48h Patching)',
+        requirement_summary: 'Mandate 48-hour patching SLA for critical CVSS 9.0+ vulnerabilities on internet-facing assets.',
+        title: 'Establish Emergency Change Advisory Board (eCAB) Protocol for Fast-Track 48h Patching',
+        description: 'Formulate an expedited eCAB change procedure with standing authorization from CISO and Head IT to patch internet perimeters within 48 hours without waiting for scheduled weekend release cycles.',
+        owner_id: 'OWN-13',
+        owner_name: 'Head — Digital Banking & Technology',
+        owner_line: 'First line',
+        approver_id: 'OWN-11',
+        approver_name: 'Chief Risk Officer',
+        due_date: '2026-08-20', // Overdue deliberate test item
+        priority: 'High',
+        status: 'Under Review',
+        progress_pct: 90,
+        created_at: '2026-08-02T10:00:00Z',
+        updated_at: '2026-08-25T17:00:00Z',
+        remediation_notes: 'eCAB standard operating procedure drafted and reviewed by CISO; awaiting final signature from CRO.',
+        is_overdue: true,
+        evidence_items: [
+          {
+            id: 'EVD-004',
+            action_id: 'ACT-2026-005',
+            title: 'Draft eCAB SOP and Fast-Track Patching Governance Framework',
+            file_name: 'SOP_IT_SEC_eCAB_Emergency_Patching_v1.0.docx',
+            file_type: 'application/docx',
+            file_size: '1.2 MB',
+            uploaded_by: 'it.governance@bank.com',
+            uploaded_at: '2026-08-24T16:00:00Z',
+            verification_status: 'Pending',
+            notes: 'Submitted for CRO sign-off.'
+          }
+        ]
       }
     ];
 
-    actionsSeed.forEach((act) => this.actions.set(act.id, act));
+    sampleActions.forEach(act => this.actions.set(act.id, act));
 
-    // 8. Pre-seed Audit Events
+    // 7. Pre-seed Audit Trail Events
     this.auditEvents = [
       {
-        id: 'EVT-001',
-        timestamp: '2026-08-20T08:00:00Z',
-        user_email: 'compliance.officer@bank.sa',
-        user_name: 'Ahmed Al-Mansoor (CCO)',
+        id: 'EVT-1001',
+        timestamp: '2026-08-01T08:00:00Z',
+        user_email: 'system.ingestion@rbi-intel.bank',
+        user_name: 'RBI Intel Automated Ingestion Service',
         event_type: 'DOCUMENT_INGESTED',
-        entity_type: 'document',
-        entity_id: 'sama:csf:2026',
-        entity_title: 'SAMA Cyber Security Framework (CSF v3.0)',
-        details: 'Ingested SAMA CSF v3.0 publication from rulebook.sama.gov.sa with SHA-256 integrity verification.',
-        regulator: 'SAMA'
+        entity_type: 'DOCUMENT',
+        entity_id: 'rbi:md:13643',
+        entity_title: 'RBI Cybersecurity & Tech Risk Directions 2026',
+        details: 'Ingested Master Direction RBI/DoS/2026-27/410 from official RBI publication repository.'
       },
       {
-        id: 'EVT-002',
-        timestamp: '2026-08-20T08:15:00Z',
-        user_email: 'gemini.engine@system',
-        user_name: 'Gemini Regulatory AI Model',
+        id: 'EVT-1002',
+        timestamp: '2026-08-01T08:30:00Z',
+        user_email: 'gemini-ai@rbi-intel.bank',
+        user_name: 'Gemini Regulatory Intelligence Engine',
         event_type: 'AI_ANALYSIS_COMPLETED',
-        entity_type: 'document',
-        entity_id: 'sama:csf:2026',
-        entity_title: 'SAMA Cyber Security Framework (CSF v3.0)',
-        details: 'Extracted 5 key statutory obligations and classified multi-dimensional impact across 1st & 2nd Lines.',
-        regulator: 'SAMA'
+        entity_type: 'DOCUMENT',
+        entity_id: 'rbi:md:13643',
+        entity_title: 'RBI Cybersecurity & Tech Risk Directions 2026',
+        details: 'Extracted 6 clauses, 4 actionable requirements, classified obligation types, timelines, and seeded first-draft impact mappings.'
       },
       {
-        id: 'EVT-003',
-        timestamp: '2026-08-20T09:30:00Z',
-        user_email: 'compliance.officer@bank.sa',
-        user_name: 'Ahmed Al-Mansoor (CCO)',
-        event_type: 'ASSESSMENT_UPDATED',
-        entity_type: 'requirement',
-        entity_id: 'req:aml:01',
-        entity_title: '5% Beneficial Ownership Threshold',
-        details: 'Updated classification from Seeded to Reviewed: Confirmed Critical Gap in Oracle Flexcube CBS.',
-        regulator: 'SAMA'
-      },
-      {
-        id: 'EVT-004',
-        timestamp: '2026-08-20T10:00:00Z',
-        user_email: 'compliance.officer@bank.sa',
-        user_name: 'Ahmed Al-Mansoor (CCO)',
-        event_type: 'ACTION_CREATED',
-        entity_type: 'action',
-        entity_id: 'ACT-SAMA-01',
-        entity_title: 'Reconfigure Oracle Flexcube & Fenergo CLM for 5% UBO',
-        details: 'Assigned remediation action to Head of Digital Banking with due date 2026-09-10.',
-        regulator: 'SAMA'
-      },
-      {
-        id: 'EVT-005',
-        timestamp: '2026-08-20T14:30:00Z',
-        user_email: 'compliance.officer@bank.sa',
-        user_name: 'Ahmed Al-Mansoor (CCO)',
-        event_type: 'EVIDENCE_VERIFIED',
-        entity_type: 'evidence',
-        entity_id: 'EVD-SAMA-01',
-        entity_title: 'Oracle_Flexcube_5pct_UBO_UAT_Signoff_Signed.pdf',
-        details: 'Verified cryptographic SHA-256 evidence. UAT test results confirmed 5% trigger in core banking.',
-        regulator: 'SAMA'
-      },
-      // RBI Events
-      {
-        id: 'EVT-101',
-        timestamp: '2026-08-18T10:00:00Z',
-        user_email: 'cco@bank.co.in',
-        user_name: 'Meera Venkataraman (CCO)',
+        id: 'EVT-1003',
+        timestamp: '2026-08-15T09:30:00Z',
+        user_email: 'system.ingestion@rbi-intel.bank',
+        user_name: 'RBI Intel Automated Ingestion Service',
         event_type: 'DOCUMENT_INGESTED',
-        entity_type: 'document',
-        entity_id: 'rbi:itgov:2023',
-        entity_title: 'RBI Master Direction — Information Technology Governance',
-        details: 'Ingested Master Direction RBI/2023-24/107 from rbi.org.in with verified circular reference.',
-        regulator: 'RBI'
+        entity_type: 'DOCUMENT',
+        entity_id: 'rbi:cir:2026:54',
+        entity_title: 'RBI KYC Direction 2026 Amendments',
+        details: 'Ingested Circular RBI/DoR/2026-27/54 regarding 10% Beneficial Ownership and V-CIP requirements.'
       },
       {
-        id: 'EVT-102',
-        timestamp: '2026-08-18T14:20:00Z',
-        user_email: 'mlro@bank.co.in',
-        user_name: 'Sunil Nair (MLRO)',
+        id: 'EVT-1004',
+        timestamp: '2026-08-20T10:00:00Z',
+        user_email: 'compliance.officer@bank.com',
+        user_name: 'Rajesh Sharma (Compliance Officer)',
+        event_type: 'ASSESSMENT_UPDATED',
+        entity_type: 'MAPPING',
+        entity_id: 'req:13643:01',
+        entity_title: 'Board IT Strategy Review',
+        details: 'Verified Board minutes from June 2026 meeting. Confirmed full compliance and upgraded provenance from seeded to reviewed.'
+      },
+      {
+        id: 'EVT-1005',
+        timestamp: '2026-08-23T11:00:00Z',
+        user_email: 'head.credit@bank.com',
+        user_name: 'Pooja Iyer (Head — Credit Monitoring)',
+        event_type: 'ACTION_CREATED',
+        entity_type: 'ACTION',
+        entity_id: 'ACT-2026-002',
+        entity_title: 'Integrate Automated GSTN & MCA21 Feed into EWS',
+        details: 'Created Critical remediation action assigned to Credit Monitoring team with due date 2026-09-30.'
+      },
+      {
+        id: 'EVT-1006',
+        timestamp: '2026-08-28T14:30:00Z',
+        user_email: 'it.infrastructure@bank.com',
+        user_name: 'Amit Patel (Senior IT Manager)',
+        event_type: 'EVIDENCE_UPLOADED',
+        entity_type: 'EVIDENCE',
+        entity_id: 'EVD-001',
+        entity_title: 'North Zone DLP Deployment Status Report',
+        details: 'Uploaded PDF evidence showing 100% DLP agent rollout across 145 branch teller machines in North Zone.'
+      },
+      {
+        id: 'EVT-1007',
+        timestamp: '2026-08-29T09:15:00Z',
+        user_email: 'ciso@bank.com',
+        user_name: 'Vikramaditya Sengupta (Chief Information Security Officer)',
         event_type: 'EVIDENCE_VERIFIED',
-        entity_type: 'evidence',
-        entity_id: 'EVD-RBI-01',
-        entity_title: 'CERSAI_CKYC_API_UAT_Conformance_Report.pdf',
-        details: 'Verified cryptographic SHA-256 evidence for CKYC API 3-day SLA compliance.',
-        regulator: 'RBI'
+        entity_type: 'EVIDENCE',
+        entity_id: 'EVD-001',
+        entity_title: 'North Zone DLP Deployment Status Report',
+        details: 'Verified DLP deployment evidence and certified compliance for North Zone branch workstations.'
       }
     ];
   }
 
-  // --- QUERY & RETRIEVAL HELPERS ---
-
-  public getDocuments(regulator?: RegulatoryRegime, filter?: { status?: string; department?: string; search?: string }): RegulatoryDocument[] {
-    let docs = Array.from(this.documents.values());
-    if (regulator) {
-      docs = docs.filter((d) => d.regulator === regulator);
+  // --- Read Operations ---
+  public getDocuments(filters?: { status?: string; department?: string; search?: string }): RBIDocument[] {
+    let list = Array.from(this.documents.values());
+    if (filters?.status && filters.status !== 'all') {
+      list = list.filter(d => d.status === filters.status);
     }
-    if (filter?.status && filter.status !== 'all') {
-      docs = docs.filter((d) => d.status === filter.status);
+    if (filters?.department && filters.department !== 'all') {
+      list = list.filter(d => d.department?.toLowerCase().includes(filters.department!.toLowerCase()));
     }
-    if (filter?.department && filter.department !== 'all') {
-      docs = docs.filter((d) => d.department === filter.department);
-    }
-    if (filter?.search) {
-      const q = filter.search.toLowerCase();
-      docs = docs.filter(
-        (d) =>
-          d.title.toLowerCase().includes(q) ||
-          d.ref_no?.toLowerCase().includes(q) ||
-          d.primary_topic?.toLowerCase().includes(q) ||
-          d.department?.toLowerCase().includes(q)
+    if (filters?.search) {
+      const q = filters.search.toLowerCase();
+      list = list.filter(d =>
+        d.title.toLowerCase().includes(q) ||
+        d.ref_no?.toLowerCase().includes(q) ||
+        d.primary_topic?.toLowerCase().includes(q) ||
+        d.id.toLowerCase().includes(q)
       );
     }
 
-    // Enrich with counts
-    return docs.map((d) => {
-      const docReqs = Array.from(this.requirements.values()).filter((r) => r.doc_id === d.id);
-      const gaps = docReqs.filter((r) => {
+    // Attach counts
+    return list.map(doc => {
+      const docReqs = Array.from(this.requirements.values()).filter(r => r.doc_id === doc.id);
+      const openGaps = docReqs.filter(r => {
         const m = this.mappings.get(r.id);
-        return m?.classification === 'Gap';
+        return m?.classification === 'Gap' || m?.classification === 'Partially Compliant';
       }).length;
-      const actionsCount = Array.from(this.actions.values()).filter((a) => {
-        const req = this.requirements.get(a.req_id);
-        return req?.doc_id === d.id;
-      }).length;
+      const actions = Array.from(this.actions.values()).filter(a => a.doc_id === doc.id).length;
 
       return {
-        ...d,
+        ...doc,
+        clauses_count: Array.from(this.clauses.values()).filter(c => c.doc_id === doc.id).length,
         requirements_count: docReqs.length,
-        open_gaps_count: gaps,
-        total_actions_count: actionsCount
+        open_gaps_count: openGaps,
+        total_actions_count: actions
       };
     });
   }
 
-  public getAllDocuments(filter?: { regulator?: RegulatoryRegime; status?: string; department?: string; search?: string }): RegulatoryDocument[] {
-    return this.getDocuments(filter?.regulator, filter);
-  }
-
   public getDocumentById(id: string): {
-    document: RegulatoryDocument | null;
-    clauses: RegulatoryClause[];
-    requirements: (RegulatoryRequirement & { mapping?: ReqMapping })[];
+    document: RBIDocument | null;
+    clauses: RBIClause[];
+    requirements: (RBIRequirement & { mapping?: ReqMapping })[];
     actions: RemediationAction[];
   } {
-    const doc = this.documents.get(id) || null;
+    const doc = this.documents.get(id) ?? null;
     if (!doc) {
       return { document: null, clauses: [], requirements: [], actions: [] };
     }
-    const clauses = Array.from(this.clauses.values()).filter((c) => c.doc_id === id);
-    const reqs = Array.from(this.requirements.values())
-      .filter((r) => r.doc_id === id)
-      .map((r) => ({
+
+    const docClauses = Array.from(this.clauses.values())
+      .filter(c => c.doc_id === id)
+      .sort((a, b) => a.seq - b.seq);
+
+    const docReqs = Array.from(this.requirements.values())
+      .filter(r => r.doc_id === id)
+      .map(r => ({
         ...r,
         mapping: this.mappings.get(r.id)
       }));
-    const actions = Array.from(this.actions.values()).filter((a) => {
-      const r = this.requirements.get(a.req_id);
-      return r?.doc_id === id;
-    });
+
+    const docActions = Array.from(this.actions.values()).filter(a => a.doc_id === id);
 
     return {
       document: doc,
-      clauses,
-      requirements: reqs,
-      actions
+      clauses: docClauses,
+      requirements: docReqs,
+      actions: docActions
     };
   }
 
-  public addDocument(doc: RegulatoryDocument): RegulatoryDocument {
-    this.documents.set(doc.id, doc);
-    this.logAuditEvent({
-      event_type: 'DOCUMENT_INGESTED',
-      entity_type: 'document',
-      entity_id: doc.id,
-      entity_title: doc.title,
-      details: `Ingested ${doc.regulator} regulatory document: "${doc.title}" (Ref: ${doc.ref_no || 'N/A'})`,
-      regulator: doc.regulator
-    });
-    return doc;
-  }
-
-  public updateDocumentApplicability(id: string, override: string, reason: string, user: string): RegulatoryDocument | null {
-    const doc = this.documents.get(id);
-    if (!doc) return null;
-    doc.applicability_override = override;
-    doc.applicability_override_reason = reason;
-    doc.applicability_overridden_by = user;
-    doc.applicability_overridden_at = new Date().toISOString();
-    this.documents.set(id, doc);
-
-    this.logAuditEvent({
-      event_type: 'TRIAGE_OVERRIDDEN',
-      entity_type: 'document',
-      entity_id: doc.id,
-      entity_title: doc.title,
-      details: `Applicability changed to "${override}". Justification: ${reason}`,
-      regulator: doc.regulator
-    });
-
-    return doc;
-  }
-
-  public getRequirements(regulator?: RegulatoryRegime, filter?: {
+  public getRequirements(filters?: {
     doc_id?: string;
     classification?: string;
     obligation_type?: string;
     business_area?: string;
     search?: string;
-  }): (RegulatoryRequirement & { mapping?: ReqMapping })[] {
-    let reqs = Array.from(this.requirements.values());
+  }): (RBIRequirement & { mapping?: ReqMapping })[] {
+    let list = Array.from(this.requirements.values());
 
-    if (regulator) {
-      reqs = reqs.filter((r) => {
-        const doc = this.documents.get(r.doc_id);
-        return doc?.regulator === regulator;
-      });
+    if (filters?.doc_id && filters.doc_id !== 'all') {
+      list = list.filter(r => r.doc_id === filters.doc_id);
+    }
+    if (filters?.obligation_type && filters.obligation_type !== 'all') {
+      list = list.filter(r => r.obligation_type === filters.obligation_type);
     }
 
-    if (filter?.doc_id && filter.doc_id !== 'all') {
-      reqs = reqs.filter((r) => r.doc_id === filter.doc_id);
-    }
-    if (filter?.obligation_type && filter.obligation_type !== 'all') {
-      reqs = reqs.filter((r) => r.obligation_type === filter.obligation_type);
-    }
+    let enriched = list.map(r => ({
+      ...r,
+      mapping: this.mappings.get(r.id)
+    }));
 
-    let enriched = reqs.map((r) => {
-      const doc = this.documents.get(r.doc_id);
-      const mapping = this.mappings.get(r.id);
-      const actionsCount = Array.from(this.actions.values()).filter((a) => a.req_id === r.id).length;
-      return {
-        ...r,
-        doc_title: doc?.title || r.doc_title,
-        mapping: mapping ? { ...mapping, actions_count: actionsCount } : undefined
-      };
-    });
-
-    if (filter?.classification && filter.classification !== 'all') {
-      enriched = enriched.filter((r) => r.mapping?.classification === filter.classification);
+    if (filters?.classification && filters.classification !== 'all') {
+      enriched = enriched.filter(r => r.mapping?.classification === filters.classification);
     }
 
-    if (filter?.business_area && filter.business_area !== 'all') {
-      enriched = enriched.filter((r) => r.mapping?.business_area === filter.business_area);
+    if (filters?.business_area && filters.business_area !== 'all') {
+      enriched = enriched.filter(r => r.mapping?.business_area === filters.business_area);
     }
 
-    if (filter?.search) {
-      const q = filter.search.toLowerCase();
-      enriched = enriched.filter(
-        (r) =>
-          r.requirement.toLowerCase().includes(q) ||
-          r.clause_label?.toLowerCase().includes(q) ||
-          r.doc_title?.toLowerCase().includes(q) ||
-          r.mapping?.control.toLowerCase().includes(q) ||
-          r.mapping?.policy.toLowerCase().includes(q) ||
-          r.mapping?.finding.toLowerCase().includes(q)
+    if (filters?.search) {
+      const q = filters.search.toLowerCase();
+      enriched = enriched.filter(r =>
+        r.requirement.toLowerCase().includes(q) ||
+        r.clause_title?.toLowerCase().includes(q) ||
+        r.clause_label?.toLowerCase().includes(q) ||
+        r.doc_title?.toLowerCase().includes(q) ||
+        r.mapping?.finding?.toLowerCase().includes(q) ||
+        r.mapping?.policy?.toLowerCase().includes(q) ||
+        r.mapping?.control?.toLowerCase().includes(q)
       );
     }
 
     return enriched;
   }
 
-  public updateRequirementMapping(reqId: string, update: Partial<ReqMapping>, user: string): ReqMapping {
-    const existing = this.mappings.get(reqId) || {
-      req_id: reqId,
-      business_area: 'SAMA-BA-01',
-      business_area_name: 'Corporate Governance & Board Oversight',
-      policy: '',
-      process: '',
-      control: '',
-      control_type: 'Preventive',
-      owner_process: 'SAMA-OWN-05',
-      owner_process_line: 'First line',
-      owner_control: 'SAMA-OWN-02',
-      owner_control_line: 'Second line',
-      evidence_required: '',
-      classification: 'To Be Confirmed',
-      finding: '',
-      recommendation: '',
-      severity: 'Medium',
-      provenance: 'reviewed',
-      created_at: new Date().toISOString(),
-    };
+  public getActions(filters?: { status?: string; priority?: string; owner?: string; search?: string }): RemediationAction[] {
+    let list = Array.from(this.actions.values());
 
-    const updated: ReqMapping = {
-      ...existing,
-      ...update,
-      reviewed_by: user,
-      reviewed_at: new Date().toISOString(),
-      provenance: 'reviewed'
-    };
-
-    this.mappings.set(reqId, updated);
-
-    const req = this.requirements.get(reqId);
-    const doc = req ? this.documents.get(req.doc_id) : undefined;
-
-    this.logAuditEvent({
-      event_type: 'ASSESSMENT_UPDATED',
-      entity_type: 'requirement',
-      entity_id: reqId,
-      entity_title: req?.clause_label || reqId,
-      details: `Compliance classification set to "${updated.classification}" (Severity: ${updated.severity}). Control: ${updated.control}`,
-      regulator: doc?.regulator || 'SAMA'
+    const now = new Date();
+    // Compute overdue dynamically
+    list = list.map(a => {
+      const isPastDue = new Date(a.due_date) < now && a.status !== 'Closed' && a.status !== 'Approved';
+      return {
+        ...a,
+        is_overdue: isPastDue
+      };
     });
 
-    return updated;
-  }
-
-  public getActions(regulator?: RegulatoryRegime, filter?: { status?: string; priority?: string; owner?: string; search?: string }): RemediationAction[] {
-    let acts = Array.from(this.actions.values());
-
-    if (regulator) {
-      acts = acts.filter((a) => a.regulator === regulator);
+    if (filters?.status && filters.status !== 'all') {
+      if (filters.status === 'overdue') {
+        list = list.filter(a => a.is_overdue);
+      } else {
+        list = list.filter(a => a.status === filters.status);
+      }
     }
 
-    if (filter?.status && filter.status !== 'all') {
-      acts = acts.filter((a) => a.status === filter.status);
+    if (filters?.priority && filters.priority !== 'all') {
+      list = list.filter(a => a.priority === filters.priority);
     }
-    if (filter?.priority && filter.priority !== 'all') {
-      acts = acts.filter((a) => a.priority === filter.priority);
+
+    if (filters?.owner && filters.owner !== 'all') {
+      list = list.filter(a => a.owner_id === filters.owner || a.owner_name.includes(filters.owner!));
     }
-    if (filter?.owner && filter.owner !== 'all') {
-      acts = acts.filter((a) => a.owner_id === filter.owner);
-    }
-    if (filter?.search) {
-      const q = filter.search.toLowerCase();
-      acts = acts.filter(
-        (a) =>
-          a.title.toLowerCase().includes(q) ||
-          a.description.toLowerCase().includes(q) ||
-          a.owner_name.toLowerCase().includes(q) ||
-          a.approver_name.toLowerCase().includes(q)
+
+    if (filters?.search) {
+      const q = filters.search.toLowerCase();
+      list = list.filter(a =>
+        a.title.toLowerCase().includes(q) ||
+        a.description.toLowerCase().includes(q) ||
+        a.owner_name.toLowerCase().includes(q) ||
+        a.doc_title?.toLowerCase().includes(q)
       );
     }
-    return acts;
+
+    return list.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
   }
 
-  public addAction(action: RemediationAction): RemediationAction {
-    this.actions.set(action.id, action);
-
-    this.logAuditEvent({
-      event_type: 'ACTION_CREATED',
-      entity_type: 'action',
-      entity_id: action.id,
-      entity_title: action.title,
-      details: `Created remediation action assigned to ${action.owner_name}. Target SLA: ${action.due_date}`,
-      regulator: action.regulator || 'SAMA'
-    });
-
-    return action;
-  }
-
-  public updateAction(id: string, update: Partial<RemediationAction>, user: string): RemediationAction | null {
-    const act = this.actions.get(id);
-    if (!act) return null;
-
-    const updated: RemediationAction = {
-      ...act,
-      ...update,
-      updated_at: new Date().toISOString()
-    };
-
-    if (update.status && update.status !== act.status) {
-      this.logAuditEvent({
-        event_type: 'ACTION_STATUS_CHANGED',
-        entity_type: 'action',
-        entity_id: id,
-        entity_title: act.title,
-        details: `Status progressed from "${act.status}" to "${update.status}" by ${user}.`,
-        regulator: act.regulator
-      });
-    }
-
-    this.actions.set(id, updated);
-    return updated;
-  }
-
-  public addEvidence(actionId: string, evidence: EvidenceItem, user: string): EvidenceItem | null {
-    const act = this.actions.get(actionId);
-    if (!act) return null;
-
-    if (!act.evidence_items) {
-      act.evidence_items = [];
-    }
-    act.evidence_items.push(evidence);
-    act.updated_at = new Date().toISOString();
-    this.actions.set(actionId, act);
-
-    this.logAuditEvent({
-      event_type: 'EVIDENCE_UPLOADED',
-      entity_type: 'evidence',
-      entity_id: evidence.id,
-      entity_title: evidence.file_name,
-      details: `Evidence uploaded for action ${act.id}. SHA-256: ${evidence.sha256_hash.slice(0, 16)}...`,
-      regulator: act.regulator
-    });
-
-    return evidence;
-  }
-
-  public verifyEvidence(actionId: string, evidenceId: string, verification: { status: 'Verified' | 'Rejected'; notes?: string; verifier: string }): EvidenceItem | null {
-    const act = this.actions.get(actionId);
-    if (!act || !act.evidence_items) return null;
-
-    const item = act.evidence_items.find((e) => e.id === evidenceId);
-    if (!item) return null;
-
-    item.status = verification.status;
-    item.verification_notes = verification.notes;
-    item.verified_by = verification.verifier;
-    item.verified_at = new Date().toISOString();
-
-    act.updated_at = new Date().toISOString();
-    this.actions.set(actionId, act);
-
-    this.logAuditEvent({
-      event_type: 'EVIDENCE_VERIFIED',
-      entity_type: 'evidence',
-      entity_id: item.id,
-      entity_title: item.file_name,
-      details: `Evidence ${verification.status} by ${verification.verifier}. Notes: ${verification.notes || 'None'}`,
-      regulator: act.regulator
-    });
-
-    return item;
-  }
-
-  public getExceptions(regulator?: RegulatoryRegime): ExceptionItem[] {
+  public getExceptions(): ExceptionItem[] {
     const exceptions: ExceptionItem[] = [];
-    const now = new Date();
 
-    // 1. Critical Gaps
-    const reqs = this.getRequirements(regulator);
-    reqs.forEach((r) => {
-      if (r.mapping?.classification === 'Gap' && (r.mapping.severity === 'Critical' || r.mapping.severity === 'High')) {
-        const doc = this.documents.get(r.doc_id);
+    // 1. Overdue Actions
+    const overdueActions = this.getActions({ status: 'overdue' });
+    overdueActions.forEach(a => {
+      const daysOverdue = Math.max(1, Math.floor((Date.now() - new Date(a.due_date).getTime()) / (1000 * 60 * 60 * 24)));
+      exceptions.push({
+        id: `EXP-ACT-${a.id}`,
+        type: 'OVERDUE_ACTION',
+        title: `Overdue Remediation Action: ${a.title}`,
+        subtitle: `Assigned to ${a.owner_name} (${a.owner_line ?? '1st Line'}) • Due date was ${a.due_date}`,
+        severity: a.priority === 'Critical' ? 'Critical' : 'High',
+        due_date: a.due_date,
+        days_overdue: daysOverdue,
+        entity_id: a.id,
+        entity_type: 'action',
+        owner: a.owner_name,
+        suggested_action: 'Escalate to Approver & re-evaluate technical SLA timeline.'
+      });
+    });
+
+    // 2. Unresolved Critical/High Gaps
+    const allReqs = this.getRequirements();
+    allReqs.forEach(r => {
+      if (r.mapping?.classification === 'Gap') {
         exceptions.push({
-          id: `EXC-GAP-${r.id}`,
-          type: 'CRITICAL_GAP',
-          title: `Critical Compliance Gap: ${r.clause_label || r.id}`,
-          description: r.mapping.finding || r.requirement,
-          severity: r.mapping.severity,
+          id: `EXP-GAP-${r.id}`,
+          type: 'UNRESOLVED_GAP',
+          title: `Non-Compliant Regulatory Gap: ${r.clause_title ?? r.clause_label}`,
+          subtitle: `${r.doc_title} • ${r.mapping.finding}`,
+          severity: r.mapping.severity === 'Critical' ? 'Critical' : 'High',
           entity_id: r.id,
           entity_type: 'requirement',
-          created_at: r.extracted_at,
-          regulator: doc?.regulator
+          suggested_action: 'Assign formal remediation action item and notify CRO / Audit Committee.'
         });
-      }
-    });
-
-    // 2. Overdue Actions
-    const acts = this.getActions(regulator);
-    acts.forEach((a) => {
-      const isPast = new Date(a.due_date) < now && a.status !== 'Closed';
-      if (isPast) {
+      } else if (r.mapping?.classification === 'Partially Compliant' && r.mapping.severity === 'High') {
         exceptions.push({
-          id: `EXC-ACT-${a.id}`,
-          type: 'OVERDUE_ACTION',
-          title: `Overdue Remediation Action: ${a.title}`,
-          description: `Assigned to ${a.owner_name}, was due on ${a.due_date}. Current status: ${a.status}.`,
-          severity: a.priority,
-          entity_id: a.id,
-          entity_type: 'action',
-          created_at: a.created_at,
-          regulator: a.regulator
-        });
-      }
-    });
-
-    // 3. New Publications with Updates
-    const docs = this.getDocuments(regulator);
-    docs.forEach((d) => {
-      if (d.has_update) {
-        exceptions.push({
-          id: `EXC-DOC-${d.id}`,
-          type: 'NEW_REGULATION',
-          title: `Active Regulatory Alert: ${d.title}`,
-          description: `Supervisory publication effective ${d.effective_date || d.date}. Requires 1st/2nd line gap assessment.`,
+          id: `EXP-PART-${r.id}`,
+          type: 'HIGH_IMPACT',
+          title: `High Severity Partial Compliance: ${r.clause_title ?? r.clause_label}`,
+          subtitle: `${r.doc_title} • ${r.mapping.finding}`,
           severity: 'High',
-          entity_id: d.id,
-          entity_type: 'document',
-          created_at: d.indexed_at,
-          regulator: d.regulator
+          entity_id: r.id,
+          entity_type: 'requirement',
+          suggested_action: 'Review control blind spots and verify evidence milestone.'
+        });
+      }
+    });
+
+    // 3. New / Recent Regulatory Changes (past 30 days)
+    const recentDocs = Array.from(this.documents.values()).filter(d => {
+      const docDate = new Date(d.date);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 45);
+      return docDate >= thirtyDaysAgo;
+    });
+
+    recentDocs.forEach(d => {
+      exceptions.push({
+        id: `EXP-DOC-${d.id}`,
+        type: 'NEW_REGULATION',
+        title: `Recent RBI Publication: ${d.title}`,
+        subtitle: `Issued on ${d.date} • Effective: ${d.effective_date ?? 'Immediate'} • ${d.department}`,
+        severity: 'Medium',
+        due_date: d.effective_date,
+        entity_id: d.id,
+        entity_type: 'document',
+        department: d.department,
+        suggested_action: 'Complete human triage and verify multi-dimensional impact assessment.'
+      });
+    });
+
+    // 4. Failed Validations / Unmapped Controls (Provenance still 'seeded' or missing owner)
+    allReqs.forEach(r => {
+      if (r.mapping?.provenance === 'seeded') {
+        exceptions.push({
+          id: `EXP-VAL-${r.id}`,
+          type: 'FAILED_VALIDATION',
+          title: `Un-reviewed AI Seeded Assessment: ${r.clause_title ?? r.clause_label}`,
+          subtitle: `${r.doc_title} • Model-generated draft awaiting compliance sign-off`,
+          severity: 'Medium',
+          entity_id: r.id,
+          entity_type: 'requirement',
+          suggested_action: 'Review AI recommended controls and upgrade provenance to "reviewed" or "sourced".'
         });
       }
     });
@@ -1390,155 +1289,383 @@ class RegulatoryDataStore {
     return exceptions;
   }
 
-  public getDashboardStats(regulator: RegulatoryRegime = 'SAMA'): DashboardStats {
-    const docs = this.getDocuments(regulator);
-    const reqs = this.getRequirements(regulator);
-    const acts = this.getActions(regulator);
-    const excs = this.getExceptions(regulator);
+  public getDashboardStats(): DashboardStats {
+    const allDocs = Array.from(this.documents.values());
+    const allReqs = Array.from(this.requirements.values());
+    const allMappings = Array.from(this.mappings.values());
+    const allActions = this.getActions();
 
-    let compliant = 0;
-    let partiallyCompliant = 0;
-    let gap = 0;
-    let toBeConfirmed = 0;
+    const complianceBreakdown = {
+      compliant: allMappings.filter(m => m.classification === 'Compliant').length,
+      partially_compliant: allMappings.filter(m => m.classification === 'Partially Compliant').length,
+      gap: allMappings.filter(m => m.classification === 'Gap').length,
+      to_be_confirmed: allMappings.filter(m => m.classification === 'To Be Confirmed').length,
+      not_applicable: allMappings.filter(m => m.classification === 'Not Applicable').length,
+    };
 
-    const typeCounts: Record<string, number> = {};
-    const topicCounts: Record<string, number> = {};
-    const severityCounts: Record<string, number> = { Critical: 0, High: 0, Medium: 0, Low: 0 };
-    const baStats: Record<string, { count: number; gaps: number }> = {};
+    const actionsBreakdown = {
+      draft: allActions.filter(a => a.status === 'Draft').length,
+      assigned: allActions.filter(a => a.status === 'Assigned').length,
+      in_progress: allActions.filter(a => a.status === 'In Progress').length,
+      under_review: allActions.filter(a => a.status === 'Under Review').length,
+      approved: allActions.filter(a => a.status === 'Approved').length,
+      closed: allActions.filter(a => a.status === 'Closed').length,
+      overdue: allActions.filter(a => a.is_overdue).length,
+    };
 
-    reqs.forEach((r) => {
-      // Classification
-      const c = r.mapping?.classification || 'To Be Confirmed';
-      if (c === 'Compliant') compliant++;
-      else if (c === 'Partially Compliant') partiallyCompliant++;
-      else if (c === 'Gap') gap++;
-      else toBeConfirmed++;
+    const gaps = allMappings.filter(m => m.classification === 'Gap' || m.classification === 'Partially Compliant');
+    const gapsBySeverity = {
+      critical: gaps.filter(g => g.severity === 'Critical').length,
+      high: gaps.filter(g => g.severity === 'High').length,
+      medium: gaps.filter(g => g.severity === 'Medium').length,
+      low: gaps.filter(g => g.severity === 'Low').length,
+    };
 
-      // Type
-      typeCounts[r.obligation_type] = (typeCounts[r.obligation_type] || 0) + 1;
+    // Calculate Regulatory Exposure Index (0 to 100)
+    // Formula based on weighted critical gaps, overdue actions, and unreviewed requirements
+    const totalGaps = gaps.length;
+    const weightedGapScore = (gapsBySeverity.critical * 25) + (gapsBySeverity.high * 15) + (gapsBySeverity.medium * 5) + (gapsBySeverity.low * 1);
+    const overduePenalty = actionsBreakdown.overdue * 12;
+    const exposureIndex = Math.min(100, Math.max(10, Math.round((weightedGapScore + overduePenalty) / Math.max(1, allReqs.length) * 8.5)));
 
-      // Severity
-      if (r.mapping?.severity) {
-        severityCounts[r.mapping.severity] = (severityCounts[r.mapping.severity] || 0) + 1;
-      }
+    let exposureStatus: 'Low' | 'Moderate' | 'Elevated' | 'High' = 'Moderate';
+    if (exposureIndex < 25) exposureStatus = 'Low';
+    else if (exposureIndex < 50) exposureStatus = 'Moderate';
+    else if (exposureIndex < 75) exposureStatus = 'Elevated';
+    else exposureStatus = 'High';
 
-      // Business Area
-      const baName = r.mapping?.business_area_name || 'Unassigned';
-      if (!baStats[baName]) {
-        baStats[baName] = { count: 0, gaps: 0 };
-      }
-      baStats[baName].count++;
-      if (c === 'Gap') {
-        baStats[baName].gaps++;
-      }
+    // Group gaps by business area
+    const areaMap = new Map<string, { area_name: string; count: number }>();
+    gaps.forEach(g => {
+      const area = this.businessAreas.find(b => b.id === g.business_area);
+      const name = area?.name ?? g.business_area_name ?? 'General Compliance';
+      const existing = areaMap.get(g.business_area) ?? { area_name: name, count: 0 };
+      existing.count += 1;
+      areaMap.set(g.business_area, existing);
     });
 
-    docs.forEach((d) => {
-      const t = d.primary_topic || 'Other';
-      topicCounts[t] = (topicCounts[t] || 0) + 1;
-    });
+    const gapsByBusinessArea = Array.from(areaMap.entries()).map(([id, val]) => ({
+      area_id: id,
+      area_name: val.area_name,
+      gap_count: val.count
+    })).sort((a, b) => b.gap_count - a.gap_count);
 
-    const activeActs = acts.filter((a) => a.status !== 'Closed').length;
-    const now = new Date();
-    const overdueActs = acts.filter((a) => new Date(a.due_date) < now && a.status !== 'Closed').length;
+    // 3 Lines of Defense
+    const linesOfDefense = [
+      {
+        line: '1st Line (Business & Branch Operations)',
+        requirement_count: allMappings.filter(m => m.owner_process_line === 'First line').length,
+        action_count: allActions.filter(a => a.owner_line === 'First line').length,
+        gap_count: gaps.filter(g => g.owner_process_line === 'First line').length
+      },
+      {
+        line: '2nd Line (Risk & Compliance Management)',
+        requirement_count: allMappings.filter(m => m.owner_control_line === 'Second line').length,
+        action_count: allActions.filter(a => a.owner_line === 'Second line').length,
+        gap_count: gaps.filter(g => g.owner_control_line === 'Second line').length
+      },
+      {
+        line: '3rd Line (Internal Audit & Board Governance)',
+        requirement_count: allMappings.filter(m => m.owner_process_line === 'Third line' || m.owner_control_line === 'Governance').length,
+        action_count: allActions.filter(a => a.owner_line === 'Third line' || a.owner_line === 'Governance').length,
+        gap_count: gaps.filter(g => g.owner_process_line === 'Third line' || g.owner_control_line === 'Governance').length
+      }
+    ];
 
-    let verifiedEvidence = 0;
-    acts.forEach((a) => {
-      a.evidence_items?.forEach((e) => {
-        if (e.status === 'Verified') verifiedEvidence++;
-      });
-    });
-
-    const totalAssessed = compliant + partiallyCompliant + gap;
-    const compliancePercentage = totalAssessed > 0 ? Math.round(((compliant + partiallyCompliant * 0.5) / totalAssessed) * 100) : 0;
+    // Upcoming effective dates
+    const upcomingEffectiveDates = allDocs
+      .filter(d => d.effective_date)
+      .map(d => {
+        const diffDays = Math.ceil((new Date(d.effective_date!).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        return {
+          doc_id: d.id,
+          doc_title: d.title,
+          effective_date: d.effective_date!,
+          days_remaining: diffDays,
+          department: d.department ?? 'RBI',
+          impact_level: (diffDays <= 45 ? 'Critical' : diffDays <= 90 ? 'High' : 'Medium') as any
+        };
+      })
+      .sort((a, b) => new Date(a.effective_date).getTime() - new Date(b.effective_date).getTime());
 
     return {
-      total_documents: docs.length,
-      total_obligations: reqs.length,
-      compliant_count: compliant,
-      partially_compliant_count: partiallyCompliant,
-      gap_count: gap,
-      to_be_confirmed_count: toBeConfirmed,
-      compliance_percentage: compliancePercentage,
-      active_actions: activeActs,
-      overdue_actions: overdueActs,
-      evidence_verified_count: verifiedEvidence,
-      exceptions_count: excs.length,
-      active_regime: regulator,
-      documents_by_topic: Object.entries(topicCounts).map(([topic, count]) => ({ topic, count })),
-      obligations_by_type: Object.entries(typeCounts).map(([type, count]) => ({ type, count })),
-      obligations_by_business_area: Object.entries(baStats).map(([area, data]) => ({ area, count: data.count, gaps: data.gaps })),
-      severity_distribution: Object.entries(severityCounts).map(([severity, count]) => ({ severity, count }))
+      regulatory_exposure_index: exposureIndex,
+      exposure_status: exposureStatus,
+      total_active_directions: allDocs.length,
+      total_requirements: allReqs.length,
+      compliance_breakdown: complianceBreakdown,
+      total_actions: allActions.length,
+      actions_breakdown: actionsBreakdown,
+      total_open_gaps: totalGaps,
+      gaps_by_severity: gapsBySeverity,
+      gaps_by_business_area: gapsByBusinessArea,
+      lines_of_defense_distribution: linesOfDefense,
+      upcoming_effective_dates: upcomingEffectiveDates,
+      recent_exceptions_count: this.getExceptions().length
     };
   }
 
-  public getTaxonomies(regulator?: RegulatoryRegime): { business_areas: BusinessArea[]; owners: OwnerRole[] } {
-    let bas = this.businessAreas;
-    let ows = this.owners;
-    if (regulator) {
-      bas = bas.filter((b) => !b.regulator || b.regulator === regulator);
-      ows = ows.filter((o) => !o.regulator || o.regulator === regulator);
-    }
-    return {
-      business_areas: bas,
-      owners: ows
+  // --- Write / Mutation Operations ---
+
+  public createDocument(doc: Partial<RBIDocument>): RBIDocument {
+    const id = doc.id || `rbi:doc:${Date.now().toString(36)}`;
+    const newDoc: RBIDocument = {
+      id,
+      regulator: doc.regulator || 'RBI',
+      doc_type: doc.doc_type || 'Circular',
+      title: doc.title || 'Untitled RBI Regulatory Document',
+      date: doc.date || new Date().toISOString().split('T')[0],
+      effective_date: doc.effective_date,
+      department: doc.department || 'Department of Regulation (DoR)',
+      category: doc.category || 'Commercial Banks',
+      institution_type: doc.institution_type || 'Commercial Banks',
+      primary_topic: doc.primary_topic || 'Regulatory Compliance',
+      secondary_topics: doc.secondary_topics || [],
+      ref_no: doc.ref_no || `RBI/2026-27/${Math.floor(100 + Math.random() * 900)}`,
+      source_url: doc.source_url || 'https://rbi.org.in/Scripts/NotificationUser.aspx',
+      pdf_url: doc.pdf_url,
+      status: doc.status || 'active',
+      has_update: false,
+      applicability: doc.applicability || 'Applicable',
+      indexed_at: new Date().toISOString(),
+      last_changed: new Date().toISOString(),
+      raw_body_preview: doc.raw_body_preview
     };
-  }
 
-  public getAuditTrail(regulator?: RegulatoryRegime, filter?: { entity_type?: string; user?: string; search?: string }): AuditEvent[] {
-    let events = [...this.auditEvents].reverse();
+    this.documents.set(id, newDoc);
 
-    if (regulator) {
-      events = events.filter((e) => !e.regulator || e.regulator === regulator);
-    }
-
-    if (filter?.entity_type && filter.entity_type !== 'all') {
-      events = events.filter((e) => e.entity_type === filter.entity_type);
-    }
-    if (filter?.search) {
-      const q = filter.search.toLowerCase();
-      events = events.filter(
-        (e) =>
-          e.details.toLowerCase().includes(q) ||
-          e.user_name.toLowerCase().includes(q) ||
-          e.entity_title?.toLowerCase().includes(q) ||
-          e.event_type.toLowerCase().includes(q)
-      );
-    }
-    return events;
-  }
-
-  public bulkCreateParsedClauses(
-    docId: string,
-    clauses: RegulatoryClause[],
-    requirements: RegulatoryRequirement[],
-    mappings: ReqMapping[]
-  ) {
-    clauses.forEach((c) => this.clauses.set(c.id, c));
-    requirements.forEach((r) => this.requirements.set(r.id, r));
-    mappings.forEach((m) => this.mappings.set(m.req_id, m));
-
-    const doc = this.documents.get(docId);
-    this.logAuditEvent({
-      event_type: 'AI_ANALYSIS_COMPLETED',
-      entity_type: 'document',
-      entity_id: docId,
-      entity_title: doc?.title || docId,
-      details: `AI extracted ${requirements.length} obligations and generated initial multi-dimensional mappings.`,
-      regulator: doc?.regulator || 'SAMA'
+    this.logAudit({
+      user_email: 'compliance.officer@bank.com',
+      user_name: 'Compliance Intake Officer',
+      event_type: 'DOCUMENT_INGESTED',
+      entity_type: 'DOCUMENT',
+      entity_id: id,
+      entity_title: newDoc.title,
+      details: `Manually ingested RBI document: ${newDoc.title} (${newDoc.ref_no})`
     });
+
+    return newDoc;
   }
 
-  private logAuditEvent(event: Omit<AuditEvent, 'id' | 'timestamp' | 'user_email' | 'user_name'> & { user_email?: string; user_name?: string }) {
-    const newEvent: AuditEvent = {
-      id: `EVT-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+  public updateMapping(reqId: string, updates: Partial<ReqMapping>, user: { email: string; name: string }): ReqMapping {
+    const existing = this.mappings.get(reqId);
+    if (!existing) {
+      throw new Error(`Mapping not found for requirement ${reqId}`);
+    }
+
+    const beforeState = { ...existing };
+    const updated: ReqMapping = {
+      ...existing,
+      ...updates,
+      reviewed_by: user.email,
+      reviewed_at: new Date().toISOString(),
+      provenance: updates.provenance || 'reviewed'
+    };
+
+    this.mappings.set(reqId, updated);
+
+    this.logAudit({
+      user_email: user.email,
+      user_name: user.name,
+      event_type: 'ASSESSMENT_UPDATED',
+      entity_type: 'MAPPING',
+      entity_id: reqId,
+      entity_title: `Mapping for ${reqId}`,
+      details: `Updated compliance assessment to ${updated.classification} (Severity: ${updated.severity}, Provenance: ${updated.provenance})`,
+      diff: {
+        before: { classification: beforeState.classification, severity: beforeState.severity, finding: beforeState.finding },
+        after: { classification: updated.classification, severity: updated.severity, finding: updated.finding }
+      }
+    });
+
+    return updated;
+  }
+
+  public createAction(action: Partial<RemediationAction>, user: { email: string; name: string }): RemediationAction {
+    const id = action.id || `ACT-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+    const newAction: RemediationAction = {
+      id,
+      req_id: action.req_id || 'req:unlinked',
+      doc_id: action.doc_id,
+      doc_title: action.doc_title,
+      clause_label: action.clause_label,
+      requirement_summary: action.requirement_summary,
+      title: action.title || 'Remediate Compliance Requirement',
+      description: action.description || '',
+      owner_id: action.owner_id || 'OWN-08',
+      owner_name: action.owner_name || 'Chief Compliance Officer',
+      owner_line: action.owner_line || 'Second line',
+      approver_id: action.approver_id || 'OWN-11',
+      approver_name: action.approver_name || 'Chief Risk Officer',
+      due_date: action.due_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      priority: action.priority || 'High',
+      status: action.status || 'Assigned',
+      progress_pct: action.progress_pct || 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      evidence_items: action.evidence_items || [],
+      remediation_notes: action.remediation_notes || ''
+    };
+
+    this.actions.set(id, newAction);
+
+    this.logAudit({
+      user_email: user.email,
+      user_name: user.name,
+      event_type: 'ACTION_CREATED',
+      entity_type: 'ACTION',
+      entity_id: id,
+      entity_title: newAction.title,
+      details: `Created remediation action: ${newAction.title} (Owner: ${newAction.owner_name}, Due: ${newAction.due_date})`
+    });
+
+    return newAction;
+  }
+
+  public updateAction(id: string, updates: Partial<RemediationAction>, user: { email: string; name: string }): RemediationAction {
+    const existing = this.actions.get(id);
+    if (!existing) {
+      throw new Error(`Action ${id} not found`);
+    }
+
+    const beforeState = { ...existing };
+    const updated: RemediationAction = {
+      ...existing,
+      ...updates,
+      updated_at: new Date().toISOString()
+    };
+
+    if (updates.status === 'Closed' && existing.status !== 'Closed') {
+      updated.closed_at = new Date().toISOString();
+      updated.closed_by = user.email;
+      updated.progress_pct = 100;
+    }
+
+    this.actions.set(id, updated);
+
+    this.logAudit({
+      user_email: user.email,
+      user_name: user.name,
+      event_type: updates.status === 'Closed' ? 'GAP_CLOSED' : 'ACTION_STATUS_CHANGED',
+      entity_type: 'ACTION',
+      entity_id: id,
+      entity_title: updated.title,
+      details: `Updated Action status from ${beforeState.status} to ${updated.status} (Progress: ${updated.progress_pct}%)`,
+      diff: {
+        before: { status: beforeState.status, progress_pct: beforeState.progress_pct },
+        after: { status: updated.status, progress_pct: updated.progress_pct }
+      }
+    });
+
+    return updated;
+  }
+
+  public addEvidenceToAction(
+    actionId: string,
+    evidence: Partial<EvidenceItem>,
+    user: { email: string; name: string }
+  ): EvidenceItem {
+    const action = this.actions.get(actionId);
+    if (!action) {
+      throw new Error(`Action ${actionId} not found`);
+    }
+
+    const id = evidence.id || `EVD-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newEvidence: EvidenceItem = {
+      id,
+      action_id: actionId,
+      title: evidence.title || 'Compliance Remediation Proof',
+      file_name: evidence.file_name || 'evidence_attachment.pdf',
+      file_type: evidence.file_type || 'application/pdf',
+      file_size: evidence.file_size || '1.5 MB',
+      file_url: evidence.file_url,
+      uploaded_by: user.email,
+      uploaded_at: new Date().toISOString(),
+      verification_status: evidence.verification_status || 'Pending',
+      notes: evidence.notes,
+      hash_checksum: evidence.hash_checksum || `sha256:${Math.random().toString(16).substring(2)}${Date.now().toString(16)}`
+    };
+
+    action.evidence_items.push(newEvidence);
+    action.updated_at = new Date().toISOString();
+    this.actions.set(actionId, action);
+
+    this.logAudit({
+      user_email: user.email,
+      user_name: user.name,
+      event_type: 'EVIDENCE_UPLOADED',
+      entity_type: 'EVIDENCE',
+      entity_id: id,
+      entity_title: newEvidence.title,
+      details: `Uploaded evidence document "${newEvidence.title}" (${newEvidence.file_name}) for Action ${action.id}`
+    });
+
+    return newEvidence;
+  }
+
+  public verifyEvidence(
+    actionId: string,
+    evidenceId: string,
+    verification: { status: 'Verified' | 'Rejected'; notes?: string },
+    user: { email: string; name: string }
+  ): EvidenceItem {
+    const action = this.actions.get(actionId);
+    if (!action) throw new Error(`Action ${actionId} not found`);
+
+    const ev = action.evidence_items.find(e => e.id === evidenceId);
+    if (!ev) throw new Error(`Evidence ${evidenceId} not found`);
+
+    ev.verification_status = verification.status;
+    ev.verified_by = user.email;
+    ev.verified_at = new Date().toISOString();
+    if (verification.notes) ev.notes = verification.notes;
+
+    action.updated_at = new Date().toISOString();
+    this.actions.set(actionId, action);
+
+    this.logAudit({
+      user_email: user.email,
+      user_name: user.name,
+      event_type: 'EVIDENCE_VERIFIED',
+      entity_type: 'EVIDENCE',
+      entity_id: evidenceId,
+      entity_title: ev.title,
+      details: `${verification.status} evidence item "${ev.title}" for Action ${action.id}`
+    });
+
+    return ev;
+  }
+
+  public logAudit(event: Omit<AuditEvent, 'id' | 'timestamp'>): AuditEvent {
+    const fullEvent: AuditEvent = {
+      id: `EVT-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
       timestamp: new Date().toISOString(),
-      user_email: event.user_email || 'compliance.officer@bank.portal',
-      user_name: event.user_name || 'Compliance Officer',
       ...event
     };
-    this.auditEvents.push(newEvent);
+
+    this.auditEvents.unshift(fullEvent);
+    return fullEvent;
+  }
+
+  public getAuditTrail(filters?: { entity_type?: string; user?: string; search?: string }): AuditEvent[] {
+    let list = [...this.auditEvents];
+    if (filters?.entity_type && filters.entity_type !== 'all') {
+      list = list.filter(e => e.entity_type === filters.entity_type);
+    }
+    if (filters?.user && filters.user !== 'all') {
+      list = list.filter(e => e.user_email.includes(filters.user!) || e.user_name.includes(filters.user!));
+    }
+    if (filters?.search) {
+      const q = filters.search.toLowerCase();
+      list = list.filter(e =>
+        e.details.toLowerCase().includes(q) ||
+        e.entity_title?.toLowerCase().includes(q) ||
+        e.user_name.toLowerCase().includes(q) ||
+        e.event_type.toLowerCase().includes(q)
+      );
+    }
+    return list;
   }
 }
 
-export const regulatoryDataStore = new RegulatoryDataStore();
+export const dataStore = new RegulatoryDataStore();

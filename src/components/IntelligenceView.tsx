@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RegulatoryRequirement, RegulatoryDocument, RegulatoryRegime } from '../types';
+import { RBIRequirement, RBIDocument } from '../types';
 import {
   Sliders,
   Search,
@@ -16,21 +16,16 @@ import {
 } from 'lucide-react';
 
 interface IntelligenceViewProps {
-  regime: RegulatoryRegime;
-  requirements: (RegulatoryRequirement & { mapping?: any })[];
-  documents: RegulatoryDocument[];
+  requirements: (RBIRequirement & { mapping?: any })[];
+  documents: RBIDocument[];
   onNavigateToImpact: (reqId: string) => void;
 }
 
 export const IntelligenceView: React.FC<IntelligenceViewProps> = ({
-  regime,
   requirements,
   documents,
   onNavigateToImpact
 }) => {
-  const isSAMA = regime === 'SAMA';
-  const authorityName = isSAMA ? 'Saudi Central Bank (SAMA)' : 'Reserve Bank of India (RBI)';
-
   const [selectedDoc, setSelectedDoc] = useState('all');
   const [selectedObligation, setSelectedObligation] = useState('all');
   const [selectedRelevance, setSelectedRelevance] = useState('all');
@@ -90,149 +85,177 @@ export const IntelligenceView: React.FC<IntelligenceViewProps> = ({
       <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <Sliders className={`h-5 w-5 ${isSAMA ? 'text-emerald-600' : 'text-indigo-600'}`} />
+            <Sliders className="h-5 w-5 text-indigo-600" />
             <h1 className="text-xl font-bold text-slate-900">
-              {regime} AI Regulatory Intelligence & Parsed Obligations
+              AI Regulatory Intelligence & Parsed Obligations
             </h1>
           </div>
           <p className="text-sm text-slate-600 mt-1">
-            Machine-extracted clauses translated into standardized bank obligations with applicability, timelines, and {authorityName} taxonomy categorization.
+            Machine-extracted clauses translated into standardized bank obligations with applicability, timelines, and obligation categorization.
           </p>
         </div>
 
         <div className="flex items-center space-x-2 text-xs bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200 font-semibold">
-          <Cpu className={`h-4 w-4 ${isSAMA ? 'text-emerald-600' : 'text-indigo-600'}`} />
-          <span>Extracted with Gemini 2.5 Flash</span>
+          <Cpu className="h-4 w-4 text-indigo-600" />
+          <span>Extracted using Gemini 2.5 Flash</span>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={selectedDoc}
-            onChange={(e) => setSelectedDoc(e.target.value)}
-            className="text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none max-w-xs truncate"
-          >
-            <option value="all">All {regime} Documents ({documents.length})</option>
-            {documents.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.title}
-              </option>
-            ))}
-          </select>
+      {/* Filter Toolbar */}
+      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Document Filter */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">
+              Source Publication
+            </label>
+            <select
+              value={selectedDoc}
+              onChange={(e) => setSelectedDoc(e.target.value)}
+              className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none"
+            >
+              <option value="all">All Ingested Directions ({documents.length})</option>
+              {documents.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.title.slice(0, 60)}...
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <select
-            value={selectedObligation}
-            onChange={(e) => setSelectedObligation(e.target.value)}
-            className="text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none"
-          >
-            <option value="all">All Obligation Types</option>
-            {obligationTypes.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
+          {/* Obligation Type */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">
+              Obligation Type
+            </label>
+            <select
+              value={selectedObligation}
+              onChange={(e) => setSelectedObligation(e.target.value)}
+              className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none"
+            >
+              <option value="all">All Obligation Types</option>
+              {obligationTypes.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
 
-          <select
-            value={selectedRelevance}
-            onChange={(e) => setSelectedRelevance(e.target.value)}
-            className="text-xs bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 focus:outline-none"
-          >
-            <option value="all">All Branch Relevance</option>
-            <option value="High">High Branch Relevance</option>
-            <option value="Medium">Medium Branch Relevance</option>
-            <option value="Low">Low Branch Relevance</option>
-          </select>
+          {/* Branch Relevance */}
+          <div>
+            <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1">
+              Branch Level Relevance
+            </label>
+            <select
+              value={selectedRelevance}
+              onChange={(e) => setSelectedRelevance(e.target.value)}
+              className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none"
+            >
+              <option value="all">All Relevance Levels</option>
+              <option value="High">High (Direct branch operational impact)</option>
+              <option value="Medium">Medium (Regional / zonal operations)</option>
+              <option value="Low">Low (Head Office / Central Tech only)</option>
+            </select>
+          </div>
         </div>
 
-        <div className="relative w-72">
-          <Search className="h-4 w-4 absolute left-2.5 top-2 text-slate-400" />
+        <div className="relative pt-1">
+          <Search className="h-4 w-4 absolute left-2.5 top-3.5 text-slate-400" />
           <input
             type="text"
-            placeholder={`Search ${regime} obligations, keywords...`}
+            placeholder="Search obligations by keywords, obligation text, or clause title..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full text-xs pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full text-xs pl-8 pr-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
       </div>
 
-      {/* Obligations Grid */}
-      <div className="grid grid-cols-1 gap-4">
-        {filteredReqs.map((req) => (
-          <div
-            key={req.id}
-            className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:border-slate-300 hover:shadow transition space-y-4"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-              <div className="flex items-center space-x-2">
-                <span className={`px-2.5 py-0.5 text-xs font-bold rounded border ${getObligationColor(req.obligation_type)}`}>
-                  {req.obligation_type}
-                </span>
-                <span className="text-xs font-bold text-slate-800 font-mono bg-slate-100 px-2 py-0.5 rounded">
-                  {req.clause_label}
-                </span>
-                <span className="text-xs text-slate-400 font-mono">{req.id}</span>
+      {/* Extracted Obligations List */}
+      <div className="space-y-4">
+        {filteredReqs.length === 0 ? (
+          <div className="bg-white border border-slate-200 rounded-xl p-12 text-center text-slate-500">
+            <AlertCircle className="h-10 w-10 text-slate-400 mx-auto mb-2" />
+            <p className="font-semibold text-slate-800">No matching obligations found</p>
+            <p className="text-xs text-slate-500 mt-1">Try relaxing your filter parameters or search term.</p>
+          </div>
+        ) : (
+          filteredReqs.map((req) => (
+            <div
+              key={req.id}
+              className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:border-slate-300 transition space-y-3"
+            >
+              {/* Top metadata tags */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                    {req.clause_label}
+                  </span>
+                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded border ${getObligationColor(req.obligation_type)}`}>
+                    {req.obligation_type}
+                  </span>
+                  <span className="text-[11px] font-medium text-slate-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                    Branch: <strong>{req.branch_relevance}</strong>
+                  </span>
+                </div>
+
+                <div className="text-[11px] text-slate-400 font-mono">
+                  {req.id}
+                </div>
               </div>
 
-              <div className="flex items-center space-x-2 text-xs text-slate-500">
-                <Building className="h-3.5 w-3.5" />
-                <span className="font-semibold text-slate-700">{req.doc_title}</span>
+              {/* Requirement Title & Paraphrased Obligation */}
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">
+                  {req.clause_title || req.clause_label}
+                </h2>
+                <div className="mt-2 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 leading-relaxed font-medium">
+                  <span className="font-bold text-slate-900 block mb-1">Plain-Language Bank Obligation:</span>
+                  {req.requirement}
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-1.5">
-              <h3 className="text-sm font-bold text-slate-900">
-                {req.clause_title}
-              </h3>
-              <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100 font-sans">
-                {req.requirement}
-              </p>
-            </div>
+              {/* Applicability, Timelines & Keywords */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-slate-600 pt-1">
+                <div>
+                  <span className="font-semibold text-slate-700">Applicability:</span> {req.applicability}
+                </div>
+                {req.timeline && (
+                  <div className="flex items-center space-x-1">
+                    <Clock className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                    <span><strong className="text-slate-700">Timeline / SLA:</strong> {req.timeline}</span>
+                  </div>
+                )}
+              </div>
 
-            {/* Structured Tags & Timeline */}
-            <div className="flex flex-wrap items-center justify-between gap-3 text-xs pt-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[11px] text-slate-500 font-medium">Keywords:</span>
-                {req.keywords?.map((k, i) => (
+              {/* Keyword chips */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-100">
+                <Tag className="h-3 w-3 text-slate-400 mr-1" />
+                {req.keywords.map((kw, idx) => (
                   <span
-                    key={i}
-                    className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] border border-slate-200"
+                    key={idx}
+                    className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full border border-slate-200"
                   >
-                    <Tag className="h-2.5 w-2.5" />
-                    <span>{k}</span>
+                    #{kw}
                   </span>
                 ))}
               </div>
 
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-1 text-slate-500 text-xs">
-                  <Clock className="h-3.5 w-3.5 text-slate-400" />
-                  <span>Timeline: <strong className="text-slate-800">{req.timeline || 'Mandatory / Continuous'}</strong></span>
+              {/* Footer with Impact Mapping Link */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div className="text-xs text-slate-500">
+                  Document: <span className="font-semibold text-slate-700">{req.doc_title}</span>
                 </div>
 
                 <button
                   onClick={() => onNavigateToImpact(req.id)}
-                  className={`flex items-center space-x-1.5 font-bold text-xs px-3 py-1 rounded-lg border shadow-2xs transition ${
-                    isSAMA
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                      : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'
-                  }`}
+                  className="flex items-center space-x-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg transition"
                 >
-                  <span>Impact & Assessment</span>
+                  <span>Bank Impact & Gap Assessment</span>
                   <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
-          </div>
-        ))}
-
-        {filteredReqs.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-xl border border-slate-200 text-slate-500 text-xs">
-            No {regime} obligations found matching current filters.
-          </div>
+          ))
         )}
       </div>
     </div>

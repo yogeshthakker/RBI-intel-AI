@@ -1,6 +1,6 @@
 {
-  "name": "SAMA Rulebook Intel — Regulatory Intelligence & Compliance",
-  "description": "Enterprise SAMA Rulebook regulatory intelligence platform for Saudi banks and financial institutions to monitor circulars, assess multi-dimensional impact, assign remediation actions, track compliance gaps, and maintain supervisory audit trails.",
+  "name": "RBI Intel — Bank Regulatory Intelligence & Compliance",
+  "description": "Enterprise RBI regulatory intelligence platform for banks to detect changes, assess multi-dimensional impact, assign remediation actions, track compliance gaps, and maintain end-to-end audit trails.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

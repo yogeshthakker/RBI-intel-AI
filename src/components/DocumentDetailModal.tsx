@@ -1,5 +1,5 @@
 import React from 'react';
-import { SAMADocument, SAMARequirement } from '../types';
+import { RBIDocument, RBIRequirement } from '../types';
 import {
   FileText,
   ExternalLink,
@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 
 interface DocumentDetailModalProps {
-  document: SAMADocument | null;
-  requirements: (SAMARequirement & { mapping?: any })[];
+  document: RBIDocument | null;
+  requirements: (RBIRequirement & { mapping?: any })[];
   onClose: () => void;
   onNavigateToImpact: (reqId: string) => void;
 }
@@ -60,7 +60,7 @@ export const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
           {/* Metadata Banner */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 bg-white border border-slate-200 rounded-xl shadow-xs">
             <div>
-              <span className="text-[10px] text-slate-400 font-bold uppercase">Issuing SAMA Department</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase">Issuing Department</span>
               <div className="font-semibold text-slate-900 mt-0.5">{document.department}</div>
             </div>
             <div>
@@ -71,12 +71,12 @@ export const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
               <span className="text-[10px] text-slate-400 font-bold uppercase">Official Source</span>
               <div className="mt-0.5">
                 <a
-                  href={document.source_url || 'https://rulebook.sama.gov.sa/en'}
+                  href={document.source_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-emerald-700 hover:underline flex items-center space-x-1 font-semibold"
                 >
-                  <span>SAMA Rulebook Portal</span>
+                  <span>RBI Official Gazette</span>
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               </div>
@@ -131,7 +131,7 @@ export const DocumentDetailModal: React.FC<DocumentDetailModalProps> = ({
 
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                     <div className="text-[11px] text-slate-500">
-                      Mapped to: <strong className="text-slate-700">{req.mapping?.business_area_name || 'Cybersecurity & Governance'}</strong>
+                      Mapped to: <strong className="text-slate-700">{req.mapping?.business_area_name || 'Credit / KYC'}</strong>
                     </div>
 
                     <button

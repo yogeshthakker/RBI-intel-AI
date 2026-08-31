@@ -1,5 +1,3 @@
-export type RegulatoryRegime = 'SAMA' | 'RBI';
-
 export type DocumentStatus = 'active' | 'superseded' | 'repealed' | 'withdrawn' | 'amended';
 
 export type ObligationType =
@@ -41,9 +39,9 @@ export type ActionPriority = 'Critical' | 'High' | 'Medium' | 'Low';
 
 export type LineOfDefense = 'First line' | 'Second line' | 'Third line' | 'Board / Senior Management' | 'Governance';
 
-export interface RegulatoryDocument {
+export interface RBIDocument {
   id: string;
-  regulator: RegulatoryRegime;
+  regulator: string;
   doc_type: string;
   title: string;
   date: string;
@@ -74,17 +72,17 @@ export interface RegulatoryDocument {
   raw_body_preview?: string;
 }
 
-export interface RegulatoryClause {
+export interface RBIClause {
   id: string;
   doc_id: string;
   clause_label: string;
   chapter?: string;
   seq: number;
   text: string;
-  needs_review?: boolean;
+  needs_review: boolean;
 }
 
-export interface RegulatoryRequirement {
+export interface RBIRequirement {
   id: string;
   clause_id: string;
   doc_id: string;
@@ -100,18 +98,9 @@ export interface RegulatoryRequirement {
   keywords: string[];
   extracted_at: string;
   model?: string;
-  needs_review?: boolean;
+  needs_review: boolean;
   mapping?: ReqMapping;
 }
-
-// Aliases for compatibility
-export type SAMADocument = RegulatoryDocument;
-export type SAMAClause = RegulatoryClause;
-export type SAMARequirement = RegulatoryRequirement;
-
-export type RBIDocument = RegulatoryDocument;
-export type RBIClause = RegulatoryClause;
-export type RBIRequirement = RegulatoryRequirement;
 
 export interface ReqMapping {
   req_id: string;
@@ -146,19 +135,29 @@ export interface BusinessArea {
   id: string;
   name: string;
   description: string;
-  code?: string;
-  regulator?: RegulatoryRegime;
 }
 
 export interface OwnerRole {
   id: string;
-  role_title?: string;
-  name?: string;
-  line_of_defense?: LineOfDefense;
-  line?: LineOfDefense;
-  department: string;
-  default_assignee_name?: string;
-  regulator?: RegulatoryRegime;
+  role: string;
+  line: LineOfDefense;
+}
+
+export interface EvidenceItem {
+  id: string;
+  action_id: string;
+  title: string;
+  file_name?: string;
+  file_type?: string;
+  file_size?: string;
+  file_url?: string;
+  uploaded_by: string;
+  uploaded_at: string;
+  verification_status: 'Pending' | 'Verified' | 'Rejected';
+  verified_by?: string;
+  verified_at?: string;
+  notes?: string;
+  hash_checksum?: string;
 }
 
 export interface RemediationAction {
@@ -172,42 +171,20 @@ export interface RemediationAction {
   description: string;
   owner_id: string;
   owner_name: string;
+  owner_line?: LineOfDefense;
   approver_id: string;
   approver_name: string;
-  status: ActionStatus;
-  priority: ActionPriority;
   due_date: string;
-  target_quarter?: string;
-  sla_status?: 'On Track' | 'At Risk' | 'Overdue';
-  is_overdue?: boolean;
-  progress_pct?: number;
+  priority: ActionPriority;
+  status: ActionStatus;
+  progress_pct: number;
   created_at: string;
   updated_at: string;
-  evidence_items?: EvidenceItem[];
-  milestones?: { title: string; completed: boolean; target_date?: string }[];
-  closure_notes?: string;
   closed_at?: string;
   closed_by?: string;
-  regulator?: RegulatoryRegime;
-}
-
-export interface EvidenceItem {
-  id: string;
-  action_id: string;
-  title?: string;
-  file_name: string;
-  file_type: string;
-  file_size?: number | string;
-  uploaded_at?: string;
-  uploaded_by?: string;
-  sha256_hash?: string;
-  status?: 'Pending' | 'Verified' | 'Rejected';
-  verification_status?: 'Pending' | 'Verified' | 'Rejected';
-  verification_notes?: string;
-  notes?: string;
-  verified_by?: string;
-  verified_at?: string;
-  storage_path?: string;
+  evidence_items: EvidenceItem[];
+  remediation_notes?: string;
+  is_overdue?: boolean;
 }
 
 export interface AuditEvent {
@@ -215,62 +192,90 @@ export interface AuditEvent {
   timestamp: string;
   user_email: string;
   user_name: string;
-  user_role?: string;
   event_type:
     | 'DOCUMENT_INGESTED'
     | 'AI_ANALYSIS_COMPLETED'
-    | 'TRIAGE_OVERRIDDEN'
+    | 'TRIAGE_OVERRIDE'
     | 'ASSESSMENT_UPDATED'
+    | 'PROVENANCE_UPGRADED'
     | 'ACTION_CREATED'
     | 'ACTION_STATUS_CHANGED'
     | 'EVIDENCE_UPLOADED'
     | 'EVIDENCE_VERIFIED'
-    | 'REGIME_SWITCHED'
-    | string;
-  entity_type: 'document' | 'requirement' | 'action' | 'evidence' | 'system' | string;
+    | 'GAP_CLOSED'
+    | 'AUDIT_PACK_EXPORTED';
+  entity_type: 'DOCUMENT' | 'REQUIREMENT' | 'MAPPING' | 'ACTION' | 'EVIDENCE' | 'REPORT';
   entity_id: string;
   entity_title?: string;
   details: string;
-  metadata?: Record<string, any>;
-  regulator?: RegulatoryRegime;
+  diff?: {
+    before?: Record<string, any>;
+    after?: Record<string, any>;
+  };
 }
 
 export interface ExceptionItem {
   id: string;
-  type:
-    | 'CRITICAL_GAP'
-    | 'OVERDUE_ACTION'
-    | 'NEW_REGULATION'
-    | 'PENDING_REVIEW'
-    | 'UNMAPPED_REQUIREMENT'
-    | 'UNRESOLVED_GAP'
-    | 'FAILED_VALIDATION';
+  type: 'NEW_REGULATION' | 'HIGH_IMPACT' | 'OVERDUE_ACTION' | 'FAILED_VALIDATION' | 'UNRESOLVED_GAP';
   title: string;
-  subtitle?: string;
-  description: string;
-  suggested_action?: string;
+  subtitle: string;
   severity: SeverityLevel;
+  due_date?: string;
+  days_overdue?: number;
   entity_id: string;
   entity_type: 'document' | 'requirement' | 'action';
-  created_at: string;
-  regulator?: RegulatoryRegime;
+  department?: string;
+  owner?: string;
+  suggested_action: string;
 }
 
 export interface DashboardStats {
-  total_documents: number;
-  total_obligations: number;
-  compliant_count: number;
-  partially_compliant_count: number;
-  gap_count: number;
-  to_be_confirmed_count: number;
-  compliance_percentage: number;
-  active_actions: number;
-  overdue_actions: number;
-  evidence_verified_count: number;
-  exceptions_count: number;
-  active_regime: RegulatoryRegime;
-  documents_by_topic: { topic: string; count: number }[];
-  obligations_by_type: { type: string; count: number }[];
-  obligations_by_business_area: { area: string; count: number; gaps: number }[];
-  severity_distribution: { severity: string; count: number }[];
+  regulatory_exposure_index: number; // 0 - 100
+  exposure_status: 'Low' | 'Moderate' | 'Elevated' | 'High';
+  total_active_directions: number;
+  total_requirements: number;
+  compliance_breakdown: {
+    compliant: number;
+    partially_compliant: number;
+    gap: number;
+    to_be_confirmed: number;
+    not_applicable: number;
+  };
+  total_actions: number;
+  actions_breakdown: {
+    draft: number;
+    assigned: number;
+    in_progress: number;
+    under_review: number;
+    approved: number;
+    closed: number;
+    overdue: number;
+  };
+  total_open_gaps: number;
+  gaps_by_severity: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+  };
+  gaps_by_business_area: {
+    area_id: string;
+    area_name: string;
+    gap_count: number;
+  }[];
+  lines_of_defense_distribution: {
+    line: string;
+    requirement_count: number;
+    action_count: number;
+    gap_count: number;
+  }[];
+  upcoming_effective_dates: {
+    doc_id: string;
+    doc_title: string;
+    effective_date: string;
+    days_remaining: number;
+    department: string;
+    impact_level: SeverityLevel;
+  }[];
+  recent_exceptions_count: number;
 }

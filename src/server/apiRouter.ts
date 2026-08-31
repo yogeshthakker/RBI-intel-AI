@@ -1,22 +1,21 @@
 import { Router } from 'express';
-import { regulatoryDataStore } from './dataStore';
+import { dataStore } from './dataStore';
 import { analyzeDocumentWithGemini, generateRemediationPlan, complianceAdvisorChat } from './geminiService';
-import { RegulatoryClause, RegulatoryRequirement, ReqMapping, RegulatoryRegime } from '../types';
+import { RBIClause, RBIRequirement, ReqMapping } from '../types';
 
 export const apiRouter = Router();
 
 // Current active session user
 const DEFAULT_USER = {
-  email: 'compliance.officer@bank.portal',
-  name: 'Chief Compliance Officer'
+  email: 'compliance.officer@bank.com',
+  name: 'Rajesh Sharma (Compliance Officer)'
 };
 
 // 1. Documents API
 apiRouter.get('/documents', (req, res) => {
   try {
-    const { regulator, status, department, search } = req.query as Record<string, string>;
-    const regime = (regulator as RegulatoryRegime) || undefined;
-    const docs = regulatoryDataStore.getDocuments(regime, { status, department, search });
+    const { status, department, search } = req.query as Record<string, string>;
+    const docs = dataStore.getDocuments({ status, department, search });
     res.json({ success: true, data: docs });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -26,8 +25,8 @@ apiRouter.get('/documents', (req, res) => {
 apiRouter.get('/documents/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const docData = regulatoryDataStore.getDocumentById(id);
-    if (!docData || !docData.document) {
+    const docData = dataStore.getDocumentById(id);
+    if (!docData.document) {
       return res.status(404).json({ success: false, error: 'Document not found' });
     }
     res.json({ success: true, data: docData });
@@ -38,80 +37,55 @@ apiRouter.get('/documents/:id', (req, res) => {
 
 apiRouter.post('/documents', (req, res) => {
   try {
-    const newDoc = regulatoryDataStore.addDocument(req.body);
+    const newDoc = dataStore.createDocument(req.body);
     res.status(201).json({ success: true, data: newDoc });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-apiRouter.put('/documents/:id/triage', (req, res) => {
-  try {
-    const { id } = req.params;
-    const { override, reason } = req.body;
-    const updated = regulatoryDataStore.updateDocumentApplicability(id, override, reason, DEFAULT_USER.email);
-    res.json({ success: true, data: updated });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// Ingest + Auto AI Extraction for SAMA or RBI
+// Ingest + Auto AI Extraction
 apiRouter.post('/documents/ingest-with-ai', async (req, res) => {
   try {
-    const { title, rawText, refNo, docType, department, sourceUrl, regulator } = req.body;
+    const { title, rawText, refNo, docType, department, sourceUrl } = req.body;
     if (!title || !rawText) {
       return res.status(400).json({ success: false, error: 'Title and raw text are required.' });
     }
 
-    const regime: RegulatoryRegime = regulator === 'RBI' ? 'RBI' : 'SAMA';
-    const isRBI = regime === 'RBI';
-
     // 1. Run Gemini extraction
-    const aiAnalysis = await analyzeDocumentWithGemini(title, rawText, regime);
+    const aiAnalysis = await analyzeDocumentWithGemini(title, rawText);
 
     // 2. Create document record
-    const prefix = isRBI ? 'rbi' : 'sama';
-    const docId = `${prefix}:doc:${Date.now().toString(36)}`;
-    const createdDoc = regulatoryDataStore.addDocument({
+    const docId = `rbi:doc:${Date.now().toString(36)}`;
+    const createdDoc = dataStore.createDocument({
       id: docId,
-      regulator: regime,
       title,
-      date: new Date().toISOString().split('T')[0],
-      doc_type: docType || (isRBI ? 'Master Direction' : 'Circular'),
-      department: aiAnalysis.department || department || (isRBI ? 'Department of Regulation' : 'Banking Supervision Department'),
+      doc_type: docType || 'Circular',
+      department: aiAnalysis.department || department || 'Department of Regulation (DoR)',
       primary_topic: aiAnalysis.primary_topic || 'Regulatory Compliance',
       effective_date: aiAnalysis.effective_date,
-      ref_no: refNo || (isRBI ? `RBI/2026-27/${Math.floor(100 + Math.random() * 900)}` : `SAMA Circular No. ${Math.floor(40000000 + Math.random() * 9000000)}`),
-      source_url: sourceUrl || (isRBI ? 'https://www.rbi.org.in' : 'https://rulebook.sama.gov.sa/en'),
-      status: 'active',
-      has_update: true,
-      applicability: 'Applicable',
-      indexed_at: new Date().toISOString(),
+      ref_no: refNo || `RBI/2026-27/${Math.floor(200 + Math.random() * 700)}`,
+      source_url: sourceUrl || 'https://rbi.org.in',
       raw_body_preview: aiAnalysis.summary || rawText.slice(0, 300)
     });
 
     // 3. Create clauses & requirements from AI extraction
     const createdRequirements: any[] = [];
-    const clausesToInsert: RegulatoryClause[] = [];
-    const reqsToInsert: RegulatoryRequirement[] = [];
-    const mappingsToInsert: ReqMapping[] = [];
-
     aiAnalysis.clauses.forEach((c, idx) => {
       const clauseId = `${docId}#CLAUSE-${idx + 1}`;
-      const clause: RegulatoryClause = {
+      const clause: RBIClause = {
         id: clauseId,
         doc_id: docId,
-        clause_label: c.clause_label || (isRBI ? `Para ${idx + 1}` : `Clause ${idx + 1}`),
+        clause_label: c.clause_label || `Clause ${idx + 1}`,
         chapter: 'Extracted Clauses',
         seq: idx + 1,
         text: c.requirement,
         needs_review: false
       };
-      clausesToInsert.push(clause);
+      dataStore.clauses.set(clauseId, clause);
 
-      const reqId = `req:${docId.replace(`${prefix}:`, '')}:${(idx + 1).toString().padStart(2, '0')}`;
-      const requirement: RegulatoryRequirement = {
+      const reqId = `req:${docId.replace('rbi:', '')}:${(idx + 1).toString().padStart(2, '0')}`;
+      const requirement: RBIRequirement = {
         id: reqId,
         clause_id: clauseId,
         doc_id: docId,
@@ -120,34 +94,34 @@ apiRouter.post('/documents/ingest-with-ai', async (req, res) => {
         clause_title: c.clause_title,
         requirement: c.requirement,
         obligation_type: c.obligation_type || 'Process',
-        applicability: c.applicability || (isRBI ? 'All Scheduled Commercial Banks' : 'Commercial Banks in KSA'),
+        applicability: c.applicability || 'Commercial Banks',
         branch_relevance: c.branch_relevance || 'Medium',
         timeline: c.timeline,
-        keywords: c.keywords || [isRBI ? 'rbi direction' : 'sama rulebook', 'compliance'],
+        keywords: c.keywords || ['rbi compliance'],
         extracted_at: new Date().toISOString(),
         model: 'gemini-2.5-flash',
         needs_review: false
       };
-      reqsToInsert.push(requirement);
+      dataStore.requirements.set(reqId, requirement);
 
       // Create initial seeded mapping
       const mapping: ReqMapping = {
         req_id: reqId,
-        business_area: isRBI ? 'RBI-BA-01' : 'SAMA-BA-01',
-        business_area_name: c.suggested_business_area || (isRBI ? 'IT Governance, Risk & Controls' : 'Corporate Governance & Board Oversight'),
-        policy: c.suggested_policy || `${regime} Regulatory Governance Policy (POL-${regime}-01)`,
+        business_area: 'BA-01',
+        business_area_name: c.suggested_business_area || 'KYC Governance & Policy',
+        policy: c.suggested_policy || 'Internal Operating Policy (POL-OPS-01)',
         process: 'Standard Bank Operating Process (PRC-01)',
-        control: c.suggested_control || `Automated ${regime} Regulatory Control Gate (CTL-${regime}-01)`,
+        control: c.suggested_control || 'Automated Compliance Control Gate (CTL-01)',
         control_type: c.suggested_control_type || 'Preventive',
-        owner_process: isRBI ? 'RBI-OWN-06' : 'SAMA-OWN-05',
-        owner_process_name: isRBI ? 'Head of Digital Banking & Payments' : 'Head of Digital Banking & Channels',
+        owner_process: 'OWN-13',
+        owner_process_name: 'Head — Digital Banking & Technology',
         owner_process_line: 'First line',
-        owner_control: isRBI ? 'RBI-OWN-02' : 'SAMA-OWN-02',
-        owner_control_name: 'Chief Compliance Officer (CCO)',
+        owner_control: 'OWN-08',
+        owner_control_name: 'Chief Compliance Officer',
         owner_control_line: 'Second line',
-        products_impacted: ['Core Banking', 'Digital Channels', 'Payment Rails'],
+        products_impacted: ['Core Banking', 'Digital Channels'],
         tech_systems_impacted: ['Core Banking CBS', 'Risk Portal'],
-        evidence_required: 'Board/Committee approval notes, system configuration change logs, and 2nd line compliance signoff certificates.',
+        evidence_required: 'Board/Committee approval notes, system parameter screenshots, and process verification logs.',
         classification: c.initial_classification || 'To Be Confirmed',
         finding: c.initial_finding || 'AI Initial Assessment: Awaiting compliance team review.',
         recommendation: c.initial_recommendation || 'Review operational controls and assign remediation owner.',
@@ -155,12 +129,20 @@ apiRouter.post('/documents/ingest-with-ai', async (req, res) => {
         provenance: 'seeded',
         created_at: new Date().toISOString()
       };
-      mappingsToInsert.push(mapping);
+      dataStore.mappings.set(reqId, mapping);
 
       createdRequirements.push({ ...requirement, mapping });
     });
 
-    regulatoryDataStore.bulkCreateParsedClauses(docId, clausesToInsert, reqsToInsert, mappingsToInsert);
+    dataStore.logAudit({
+      user_email: 'gemini-ai@rbi-intel.bank',
+      user_name: 'Gemini Regulatory AI',
+      event_type: 'AI_ANALYSIS_COMPLETED',
+      entity_type: 'DOCUMENT',
+      entity_id: docId,
+      entity_title: createdDoc.title,
+      details: `Extracted ${aiAnalysis.clauses.length} actionable requirements and generated baseline impact assessments.`
+    });
 
     res.status(201).json({
       success: true,
@@ -178,9 +160,8 @@ apiRouter.post('/documents/ingest-with-ai', async (req, res) => {
 // 2. Requirements & Impact Mappings API
 apiRouter.get('/requirements', (req, res) => {
   try {
-    const { regulator, doc_id, classification, obligation_type, business_area, search } = req.query as Record<string, string>;
-    const regime = (regulator as RegulatoryRegime) || undefined;
-    const reqs = regulatoryDataStore.getRequirements(regime, { doc_id, classification, obligation_type, business_area, search });
+    const { doc_id, classification, obligation_type, business_area, search } = req.query as Record<string, string>;
+    const reqs = dataStore.getRequirements({ doc_id, classification, obligation_type, business_area, search });
     res.json({ success: true, data: reqs });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -190,7 +171,7 @@ apiRouter.get('/requirements', (req, res) => {
 apiRouter.put('/requirements/:id/assessment', (req, res) => {
   try {
     const { id } = req.params;
-    const updated = regulatoryDataStore.updateRequirementMapping(id, req.body, DEFAULT_USER.name);
+    const updated = dataStore.updateMapping(id, req.body, DEFAULT_USER);
     res.json({ success: true, data: updated });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -200,9 +181,8 @@ apiRouter.put('/requirements/:id/assessment', (req, res) => {
 // 3. Actions & Evidence API
 apiRouter.get('/actions', (req, res) => {
   try {
-    const { regulator, status, priority, owner, search } = req.query as Record<string, string>;
-    const regime = (regulator as RegulatoryRegime) || undefined;
-    const actions = regulatoryDataStore.getActions(regime, { status, priority, owner, search });
+    const { status, priority, owner, search } = req.query as Record<string, string>;
+    const actions = dataStore.getActions({ status, priority, owner, search });
     res.json({ success: true, data: actions });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -211,14 +191,7 @@ apiRouter.get('/actions', (req, res) => {
 
 apiRouter.post('/actions', (req, res) => {
   try {
-    const actionId = req.body.id || `ACT-${Date.now().toString(36).toUpperCase()}`;
-    const newAction = regulatoryDataStore.addAction({
-      ...req.body,
-      id: actionId,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      sla_status: 'On Track'
-    });
+    const newAction = dataStore.createAction(req.body, DEFAULT_USER);
     res.status(201).json({ success: true, data: newAction });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -228,7 +201,7 @@ apiRouter.post('/actions', (req, res) => {
 apiRouter.put('/actions/:id', (req, res) => {
   try {
     const { id } = req.params;
-    const updated = regulatoryDataStore.updateAction(id, req.body, DEFAULT_USER.name);
+    const updated = dataStore.updateAction(id, req.body, DEFAULT_USER);
     res.json({ success: true, data: updated });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -238,20 +211,7 @@ apiRouter.put('/actions/:id', (req, res) => {
 apiRouter.post('/actions/:id/evidence', (req, res) => {
   try {
     const { id } = req.params;
-    const evidenceId = req.body.id || `EVD-${Date.now().toString(36)}`;
-    const evidence = regulatoryDataStore.addEvidence(
-      id,
-      {
-        ...req.body,
-        id: evidenceId,
-        action_id: id,
-        uploaded_at: new Date().toISOString(),
-        uploaded_by: req.body.uploaded_by || DEFAULT_USER.name,
-        sha256_hash: req.body.sha256_hash || Array.from({ length: 64 }, () => Math.floor(Math.random() * 16).toString(16)).join(''),
-        status: req.body.status || 'Pending'
-      },
-      DEFAULT_USER.name
-    );
+    const evidence = dataStore.addEvidenceToAction(id, req.body, DEFAULT_USER);
     res.status(201).json({ success: true, data: evidence });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -262,11 +222,7 @@ apiRouter.put('/actions/:id/evidence/:evidenceId/verify', (req, res) => {
   try {
     const { id, evidenceId } = req.params;
     const { status, notes } = req.body;
-    const verified = regulatoryDataStore.verifyEvidence(id, evidenceId, {
-      status,
-      notes,
-      verifier: DEFAULT_USER.name
-    });
+    const verified = dataStore.verifyEvidence(id, evidenceId, { status, notes }, DEFAULT_USER);
     res.json({ success: true, data: verified });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -276,9 +232,7 @@ apiRouter.put('/actions/:id/evidence/:evidenceId/verify', (req, res) => {
 // 4. Exception Feed API
 apiRouter.get('/exceptions', (req, res) => {
   try {
-    const { regulator } = req.query as Record<string, string>;
-    const regime = (regulator as RegulatoryRegime) || undefined;
-    const exceptions = regulatoryDataStore.getExceptions(regime);
+    const exceptions = dataStore.getExceptions();
     res.json({ success: true, data: exceptions });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -288,9 +242,7 @@ apiRouter.get('/exceptions', (req, res) => {
 // 5. Dashboard & Analytics API
 apiRouter.get('/dashboard/stats', (req, res) => {
   try {
-    const { regulator } = req.query as Record<string, string>;
-    const regime: RegulatoryRegime = regulator === 'RBI' ? 'RBI' : 'SAMA';
-    const stats = regulatoryDataStore.getDashboardStats(regime);
+    const stats = dataStore.getDashboardStats();
     res.json({ success: true, data: stats });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -300,9 +252,8 @@ apiRouter.get('/dashboard/stats', (req, res) => {
 // 6. Audit Trail API
 apiRouter.get('/audit-trail', (req, res) => {
   try {
-    const { regulator, entity_type, user, search } = req.query as Record<string, string>;
-    const regime = (regulator as RegulatoryRegime) || undefined;
-    const logs = regulatoryDataStore.getAuditTrail(regime, { entity_type, user, search });
+    const { entity_type, user, search } = req.query as Record<string, string>;
+    const logs = dataStore.getAuditTrail({ entity_type, user, search });
     res.json({ success: true, data: logs });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -311,22 +262,20 @@ apiRouter.get('/audit-trail', (req, res) => {
 
 // 7. Reference Taxonomies API
 apiRouter.get('/metadata/taxonomies', (req, res) => {
-  try {
-    const { regulator } = req.query as Record<string, string>;
-    const regime = (regulator as RegulatoryRegime) || undefined;
-    const taxonomies = regulatoryDataStore.getTaxonomies(regime);
-    res.json({ success: true, data: taxonomies });
-  } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
-  }
+  res.json({
+    success: true,
+    data: {
+      business_areas: dataStore.businessAreas,
+      owners: dataStore.owners
+    }
+  });
 });
 
 // 8. Gemini AI Services
 apiRouter.post('/ai/analyze-raw', async (req, res) => {
   try {
-    const { title, text, regulator } = req.body;
-    const regime: RegulatoryRegime = regulator === 'RBI' ? 'RBI' : 'SAMA';
-    const result = await analyzeDocumentWithGemini(title || `${regime} Directive`, text || '', regime);
+    const { title, text } = req.body;
+    const result = await analyzeDocumentWithGemini(title || 'RBI Circular', text || '');
     res.json({ success: true, data: result });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -335,9 +284,8 @@ apiRouter.post('/ai/analyze-raw', async (req, res) => {
 
 apiRouter.post('/ai/generate-action-plan', async (req, res) => {
   try {
-    const { requirement, finding, severity, regulator } = req.body;
-    const regime: RegulatoryRegime = regulator === 'RBI' ? 'RBI' : 'SAMA';
-    const plan = await generateRemediationPlan(requirement, finding, severity || 'High', regime);
+    const { requirement, finding, severity } = req.body;
+    const plan = await generateRemediationPlan(requirement, finding, severity || 'High');
     res.json({ success: true, data: plan });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -346,11 +294,10 @@ apiRouter.post('/ai/generate-action-plan', async (req, res) => {
 
 apiRouter.post('/ai/chat-advisor', async (req, res) => {
   try {
-    const { query, regulator } = req.body;
-    const regime: RegulatoryRegime = regulator === 'RBI' ? 'RBI' : 'SAMA';
-    const stats = regulatoryDataStore.getDashboardStats(regime);
-    const context = `Active Regulatory Regime: ${regime}. Total Documents: ${stats.total_documents}, Obligations: ${stats.total_obligations}, Open Gaps: ${stats.gap_count}, Active Actions: ${stats.active_actions}, Overdue: ${stats.overdue_actions}, Overall Compliance: ${stats.compliance_percentage}%.`;
-    const reply = await complianceAdvisorChat(query, context, regime);
+    const { query } = req.body;
+    const stats = dataStore.getDashboardStats();
+    const context = `Total active directions: ${stats.total_active_directions}, Requirements: ${stats.total_requirements}, Open Gaps: ${stats.total_open_gaps} (Critical: ${stats.gaps_by_severity.critical}, High: ${stats.gaps_by_severity.high}). Overdue Actions: ${stats.actions_breakdown.overdue}.`;
+    const reply = await complianceAdvisorChat(query, context);
     res.json({ success: true, data: { response: reply } });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });

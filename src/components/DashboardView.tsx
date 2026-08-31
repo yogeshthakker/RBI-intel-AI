@@ -1,8 +1,7 @@
 import React from 'react';
 import {
   DashboardStats,
-  RegulatoryDocument,
-  RegulatoryRegime
+  RBIDocument
 } from '../types';
 import {
   ShieldCheck,
@@ -13,22 +12,17 @@ import {
   Layers,
   ArrowRight,
   Shield,
-  FileSpreadsheet,
-  CheckCircle,
-  FileText,
-  Activity
+  FileSpreadsheet
 } from 'lucide-react';
 
 interface DashboardViewProps {
-  regime: RegulatoryRegime;
   stats: DashboardStats | null;
-  documents: RegulatoryDocument[];
+  documents: RBIDocument[];
   onNavigate: (tab: any, filter?: string) => void;
   onOpenDoc: (docId: string) => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
-  regime,
   stats,
   documents,
   onNavigate,
@@ -37,26 +31,33 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   if (!stats) {
     return (
       <div className="flex items-center justify-center p-16">
-        <div className={`animate-spin rounded-full h-10 w-10 border-b-2 ${
-          regime === 'SAMA' ? 'border-emerald-600' : 'border-indigo-600'
-        }`} />
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600" />
       </div>
     );
   }
 
-  const isSAMA = regime === 'SAMA';
-  const authorityName = isSAMA ? 'Saudi Central Bank (SAMA)' : 'Reserve Bank of India (RBI)';
-  const frameworkName = isSAMA ? 'SAMA Rulebook' : 'RBI Master Directions';
+  const totalEvaluated =
+    stats.compliance_breakdown.compliant +
+    stats.compliance_breakdown.partially_compliant +
+    stats.compliance_breakdown.gap;
 
-  const getExposureStatus = (percentage: number) => {
-    if (percentage >= 85) return { label: 'Low Exposure', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-    if (percentage >= 70) return { label: 'Moderate Exposure', color: 'bg-amber-50 text-amber-700 border-amber-200' };
-    if (percentage >= 50) return { label: 'Elevated Exposure', color: 'bg-orange-50 text-orange-700 border-orange-200' };
-    return { label: 'High Exposure', color: 'bg-rose-50 text-rose-700 border-rose-200' };
+  const complianceRate =
+    totalEvaluated > 0
+      ? Math.round((stats.compliance_breakdown.compliant / totalEvaluated) * 100)
+      : 0;
+
+  const getExposureBadge = (status: string) => {
+    switch (status) {
+      case 'Low':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'Moderate':
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'Elevated':
+        return 'bg-orange-50 text-orange-700 border-orange-200';
+      default:
+        return 'bg-rose-50 text-rose-700 border-rose-200';
+    }
   };
-
-  const exposure = getExposureStatus(stats.compliance_percentage);
-  const exposureIndex = Math.max(0, 100 - stats.compliance_percentage);
 
   return (
     <div className="space-y-6 pb-12">
@@ -66,20 +67,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="space-y-1.5">
             <div className="flex items-center space-x-2">
               <h1 className="text-xl font-bold text-slate-900">
-                {frameworkName} Regulatory Posture & Executive Cockpit
+                Bank Regulatory Intelligence & Compliance Posture
               </h1>
-              <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${
-                isSAMA
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-indigo-100 text-indigo-800'
-              }`}>
-                {isSAMA ? '🇸🇦 SAMA Supervisory Ready' : '🇮🇳 RBI RBS Ready'}
+              <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800">
+                Live Audit Ready
               </span>
             </div>
             <p className="text-sm text-slate-600 max-w-3xl">
-              {isSAMA
-                ? 'Continuous monitoring of Saudi Central Bank (SAMA) Rulebook publications, Cyber Security Framework (CSF v3.0), and circulars mapped across 3 Lines of Defense, internal policies, and core banking controls.'
-                : 'Continuous monitoring of Reserve Bank of India (RBI) Master Directions, CSITE Cyber Security Framework, KYC/AML Directions, and circulars mapped across Three Lines of Defense and Risk-Based Supervision.'}
+              Automated intake of RBI Master Directions and circulars mapped across 3 Lines of Defense, internal policies, and Core Banking controls.
             </p>
           </div>
 
@@ -87,16 +82,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-4 min-w-[260px] justify-between">
             <div>
               <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                {regime} Regulatory Exposure
+                Regulatory Exposure Index
               </div>
               <div className="flex items-baseline space-x-2 mt-1">
                 <span className="text-3xl font-extrabold text-slate-900">
-                  {exposureIndex}
+                  {stats.regulatory_exposure_index}
                 </span>
-                <span className="text-xs font-medium text-slate-500">/ 100 Risk Index</span>
+                <span className="text-xs font-medium text-slate-500">/ 100</span>
               </div>
-              <span className={`inline-block mt-1 text-[11px] font-bold px-2 py-0.5 rounded border ${exposure.color}`}>
-                {exposure.label}
+              <span className={`inline-block mt-1 text-[11px] font-bold px-2 py-0.5 rounded border ${getExposureBadge(stats.exposure_status)}`}>
+                {stats.exposure_status} Exposure
               </span>
             </div>
             <div className="h-12 w-12 rounded-full border-4 border-slate-200 border-t-amber-500 flex items-center justify-center font-bold text-xs text-slate-700">
@@ -110,29 +105,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex items-center space-x-4 text-slate-600">
             <span className="flex items-center space-x-1.5">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              <span>{stats.compliant_count} Compliant Controls</span>
+              <span>{stats.compliance_breakdown.compliant} Compliant Controls</span>
             </span>
             <span className="flex items-center space-x-1.5">
               <span className="h-2 w-2 rounded-full bg-amber-500" />
-              <span>{stats.partially_compliant_count} Partially Compliant</span>
+              <span>{stats.compliance_breakdown.partially_compliant} Partially Compliant</span>
             </span>
             <span className="flex items-center space-x-1.5">
               <span className="h-2 w-2 rounded-full bg-rose-500" />
-              <span>{stats.gap_count} Non-Compliant Gaps</span>
-            </span>
-            <span className="flex items-center space-x-1.5">
-              <span className="h-2 w-2 rounded-full bg-slate-400" />
-              <span>{stats.to_be_confirmed_count} To Be Confirmed</span>
+              <span>{stats.compliance_breakdown.gap} Non-Compliant Gaps</span>
             </span>
           </div>
 
           <button
             onClick={() => onNavigate('exceptions')}
-            className={`flex items-center space-x-1 font-semibold transition ${
-              isSAMA ? 'text-emerald-700 hover:text-emerald-800' : 'text-indigo-700 hover:text-indigo-800'
-            }`}
+            className="flex items-center space-x-1 font-semibold text-emerald-700 hover:text-emerald-800 transition"
           >
-            <span>Review {stats.exceptions_count} Active Exceptions</span>
+            <span>Review {stats.recent_exceptions_count} Active Exceptions</span>
             <ArrowRight className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -146,17 +135,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 hover:shadow cursor-pointer transition"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">{regime} Active Directives</span>
-            <div className={`p-2 rounded-lg ${isSAMA ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-indigo-700'}`}>
+            <span className="text-xs font-semibold text-slate-500 uppercase">Active Directions</span>
+            <div className="p-2 bg-blue-50 text-blue-700 rounded-lg">
               <Building className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-2">
-            {stats.total_documents}
+            {stats.total_active_directions}
           </div>
           <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
-            <span>{stats.total_obligations} {regime} obligations tracked</span>
-            <span className={`font-medium ${isSAMA ? 'text-emerald-600' : 'text-indigo-600'}`}>View Library →</span>
+            <span>{stats.total_requirements} obligations tracked</span>
+            <span className="text-blue-600 font-medium">View Library →</span>
           </div>
         </div>
 
@@ -166,17 +155,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 hover:shadow cursor-pointer transition"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Compliance Health</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase">Compliance Posture</span>
             <div className="p-2 bg-emerald-50 text-emerald-700 rounded-lg">
               <ShieldCheck className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-bold text-emerald-700 mt-2">
-            {stats.compliance_percentage}%
+            {complianceRate}%
           </div>
           <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
-            <span>{stats.compliant_count} of {stats.total_obligations} obligations</span>
-            <span className="text-emerald-600 font-medium">View Impact →</span>
+            <span>{stats.compliance_breakdown.compliant} of {totalEvaluated} assessed</span>
+            <span className="text-emerald-600 font-medium">View Gaps →</span>
           </div>
         </div>
 
@@ -186,16 +175,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:border-slate-300 hover:shadow cursor-pointer transition"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Open {regime} Gaps</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase">Open Gaps</span>
             <div className="p-2 bg-rose-50 text-rose-700 rounded-lg">
               <AlertTriangle className="h-4 w-4" />
             </div>
           </div>
           <div className="text-2xl font-bold text-rose-700 mt-2">
-            {stats.gap_count}
+            {stats.total_open_gaps}
           </div>
           <div className="text-xs text-rose-600 mt-1 flex items-center justify-between font-medium">
-            <span>{stats.partially_compliant_count} Partial • {stats.to_be_confirmed_count} TBC</span>
+            <span>{stats.gaps_by_severity.critical} Critical • {stats.gaps_by_severity.high} High</span>
             <span>Triage →</span>
           </div>
         </div>
@@ -212,56 +201,49 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
           </div>
           <div className="text-2xl font-bold text-slate-900 mt-2">
-            {stats.active_actions}
+            {stats.total_actions}
           </div>
           <div className="text-xs mt-1 flex items-center justify-between">
-            <span className="text-rose-600 font-semibold">{stats.overdue_actions} Overdue SLA</span>
+            <span className="text-rose-600 font-semibold">{stats.actions_breakdown.overdue} Overdue SLA</span>
             <span className="text-amber-700 font-medium">Manage →</span>
           </div>
         </div>
       </div>
 
-      {/* Two Column Section: Breakdown by Business Area & Regulatory Topics */}
+      {/* Two Column Section: Heatmap by Business Area & 3 Lines of Defense */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Gaps by Business Area */}
         <div className="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-                Regulatory Obligations by Bank Business Function
+                Regulatory Gaps by Bank Business Function
               </h2>
-              <p className="text-xs text-slate-500">Distribution of {regime} requirements and identified compliance gaps</p>
+              <p className="text-xs text-slate-500">Distribution of non-compliant & partially compliant requirements</p>
             </div>
             <button
               onClick={() => onNavigate('impact')}
-              className={`text-xs font-semibold hover:underline ${isSAMA ? 'text-emerald-700' : 'text-indigo-700'}`}
+              className="text-xs font-semibold text-emerald-700 hover:underline"
             >
               View Full Register
             </button>
           </div>
 
           <div className="space-y-3.5">
-            {stats.obligations_by_business_area.map((area) => {
-              const maxCount = Math.max(1, ...stats.obligations_by_business_area.map(b => b.count));
-              const pct = Math.round((area.count / maxCount) * 100);
+            {stats.gaps_by_business_area.slice(0, 5).map((area) => {
+              const maxGap = Math.max(1, ...stats.gaps_by_business_area.map(b => b.gap_count));
+              const pct = Math.round((area.gap_count / maxGap) * 100);
               return (
-                <div key={area.area} className="space-y-1.5">
+                <div key={area.area_id} className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-800">{area.area}</span>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-slate-500 text-[11px]">{area.count} obligations</span>
-                      {area.gaps > 0 && (
-                        <span className="font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 text-[11px]">
-                          {area.gaps} gaps
-                        </span>
-                      )}
-                    </div>
+                    <span className="font-semibold text-slate-800">{area.area_name}</span>
+                    <span className="font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 text-[11px]">
+                      {area.gap_count} gaps
+                    </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                     <div
-                      className={`h-2 rounded-full transition-all duration-500 ${
-                        area.gaps > 0 ? 'bg-rose-500' : isSAMA ? 'bg-emerald-500' : 'bg-indigo-500'
-                      }`}
+                      className="bg-rose-500 h-2 rounded-full transition-all duration-500"
                       style={{ width: `${pct}%` }}
                     />
                   </div>
@@ -271,102 +253,124 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* Right: Topic & Framework Breakdown */}
+        {/* Right: Three Lines of Defense Impact */}
         <div className="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-                  {regime} Supervised Topics
+                <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center space-x-1.5">
+                  <Layers className="h-4 w-4 text-emerald-600" />
+                  <span>3 Lines of Defense Distribution</span>
                 </h2>
-                <p className="text-xs text-slate-500">Breakdown of ingested regulations by supervisory topic</p>
+                <p className="text-xs text-slate-500">Accountability & control ownership alignment</p>
               </div>
-              <Layers className="h-4 w-4 text-slate-400" />
             </div>
 
             <div className="space-y-3">
-              {stats.documents_by_topic.map((item) => (
-                <div
-                  key={item.topic}
-                  className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100/80 transition cursor-pointer"
-                  onClick={() => onNavigate('intake')}
-                >
-                  <div className="flex items-center space-x-2">
-                    <FileText className={`h-4 w-4 ${isSAMA ? 'text-emerald-600' : 'text-indigo-600'}`} />
-                    <span className="text-xs font-semibold text-slate-800">{item.topic}</span>
+              {stats.lines_of_defense_distribution.map((lod, idx) => (
+                <div key={idx} className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <div className="text-xs font-bold text-slate-800 mb-2">
+                    {lod.line}
                   </div>
-                  <span className="text-xs font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs">
-                    {item.count} docs
-                  </span>
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="bg-white p-1.5 rounded border border-slate-200">
+                      <div className="text-slate-400 text-[10px] uppercase font-medium">Mapped Reqs</div>
+                      <div className="font-bold text-slate-800">{lod.requirement_count}</div>
+                    </div>
+                    <div className="bg-white p-1.5 rounded border border-slate-200">
+                      <div className="text-slate-400 text-[10px] uppercase font-medium">Open Gaps</div>
+                      <div className="font-bold text-rose-600">{lod.gap_count}</div>
+                    </div>
+                    <div className="bg-white p-1.5 rounded border border-slate-200">
+                      <div className="text-slate-400 text-[10px] uppercase font-medium">Active Actions</div>
+                      <div className="font-bold text-amber-600">{lod.action_count}</div>
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>Evidence Items Verified: <strong className="text-emerald-700">{stats.evidence_verified_count}</strong></span>
-            <button
-              onClick={() => onNavigate('audit')}
-              className={`font-semibold hover:underline ${isSAMA ? 'text-emerald-700' : 'text-indigo-700'}`}
-            >
-              Audit Vault →
-            </button>
+          <div className="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500">
+            <span className="font-semibold text-slate-700">Governance Principle:</span> AI recommends assignments. 2nd line risk validates; 1st line business owns remediation.
           </div>
         </div>
       </div>
 
-      {/* Ingested Regulations List */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide">
-              {regime} Frameworks & Circulars Active in Vault
-            </h2>
-            <p className="text-xs text-slate-500">Click any document to inspect extracted clauses and mapped controls</p>
+      {/* Bottom Section: Upcoming RBI Effective Dates & Quick Launch */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Statutory Deadlines */}
+        <div className="lg:col-span-8 bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wide flex items-center space-x-2">
+                <Clock className="h-4 w-4 text-amber-600" />
+                <span>Approaching RBI Statutory Effective Dates</span>
+              </h2>
+              <p className="text-xs text-slate-500">Enforceable timeline milestones requiring bank operational readiness</p>
+            </div>
           </div>
-          <button
-            onClick={() => onNavigate('intake')}
-            className={`text-xs font-semibold hover:underline ${isSAMA ? 'text-emerald-700' : 'text-indigo-700'}`}
-          >
-            Manage Intake →
-          </button>
+
+          <div className="space-y-2.5">
+            {stats.upcoming_effective_dates.slice(0, 4).map((item, idx) => (
+              <div
+                key={idx}
+                onClick={() => onOpenDoc(item.doc_id)}
+                className="flex items-center justify-between p-3 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/20 cursor-pointer transition text-xs"
+              >
+                <div className="space-y-0.5 max-w-xl">
+                  <div className="font-semibold text-slate-900 line-clamp-1">{item.doc_title}</div>
+                  <div className="text-slate-500 text-[11px] flex items-center space-x-2">
+                    <span className="font-medium text-slate-700">{item.department}</span>
+                    <span>•</span>
+                    <span>Effective: <strong className="text-slate-800">{item.effective_date}</strong></span>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <span className={`px-2.5 py-1 rounded-full font-bold text-[11px] ${
+                    item.days_remaining <= 30
+                      ? 'bg-rose-100 text-rose-800'
+                      : item.days_remaining <= 60
+                      ? 'bg-amber-100 text-amber-800'
+                      : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {item.days_remaining > 0 ? `${item.days_remaining} days left` : 'Effective Now'}
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-slate-400" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <div className="divide-y divide-slate-100">
-          {documents.map((doc) => (
-            <div
-              key={doc.id}
-              onClick={() => onOpenDoc(doc.id)}
-              className="py-3.5 flex items-center justify-between hover:bg-slate-50/80 px-2 rounded-lg cursor-pointer transition"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase ${
-                    isSAMA ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                  }`}>
-                    {doc.doc_type}
-                  </span>
-                  <span className="text-xs text-slate-500 font-mono">{doc.ref_no}</span>
-                  <span className="text-xs text-slate-400">•</span>
-                  <span className="text-xs text-slate-500">{doc.date}</span>
-                </div>
-                <div className="text-sm font-bold text-slate-800 hover:text-emerald-700 transition">
-                  {doc.title}
-                </div>
-                <p className="text-xs text-slate-500 line-clamp-1 max-w-2xl">
-                  {doc.raw_body_preview}
-                </p>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="text-right hidden sm:block">
-                  <div className="text-xs font-semibold text-slate-700">{doc.department}</div>
-                  <div className="text-[11px] text-slate-500">{doc.primary_topic}</div>
-                </div>
-                <ArrowRight className="h-4 w-4 text-slate-400" />
-              </div>
+        {/* Quick Auditing & Export Hub */}
+        <div className="lg:col-span-4 bg-slate-900 text-white rounded-xl p-6 shadow-sm flex flex-col justify-between">
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Shield className="h-5 w-5 text-emerald-400" />
+              <h3 className="font-bold text-sm text-white">Supervisory & Audit Pack</h3>
             </div>
-          ))}
+            <p className="text-xs text-slate-300">
+              Generate full lineage reports tracing RBI publications to internal controls, gap findings, owner sign-offs, and verified evidence files for RBI annual inspection.
+            </p>
+          </div>
+
+          <div className="space-y-2 mt-6">
+            <button
+              onClick={() => onNavigate('audit')}
+              className="w-full flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 px-4 rounded-lg font-semibold text-xs transition"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              <span>Open Audit & Lineage Pack</span>
+            </button>
+            <button
+              onClick={() => onNavigate('intake')}
+              className="w-full flex items-center justify-center space-x-2 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 px-4 rounded-lg font-semibold text-xs border border-slate-700 transition"
+            >
+              <span>+ Ingest New RBI Circular</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
