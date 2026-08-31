@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RBI lineage — rbi:md:11959</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin:0; font:15px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+         background:#fafaf9; color:#1c1917; }
+  header { padding:20px 24px; border-bottom:1px solid #e7e5e4; background:#fff; }
+  h1 { margin:0; font-size:17px; font-weight:600; letter-spacing:-0.01em; }
+  p.sub { margin:4px 0 0; font-size:13px; color:#78716c; }
+  .legend { display:flex; gap:18px; flex-wrap:wrap; padding:12px 24px; font-size:12px;
+             color:#57534e; border-bottom:1px solid #e7e5e4; background:#fff; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .sw { width:12px; height:12px; border-radius:3px; display:inline-block; }
+  main { padding:24px; overflow:auto; }
+  @media (prefers-color-scheme: dark) {
+    body { background:#0c0a09; color:#e7e5e4; }
+    header,.legend { background:#1c1917; border-color:#292524; }
+    p.sub,.legend { color:#a8a29e; }
+  }
+</style></head><body>
+<header>
+  <h1>RBI regulatory lineage — rbi:md:11959</h1>
+  <p class="sub">Machine-extracted from document text. Verify against the official source before relying on any edge.</p>
+</header>
+<div class="legend">
+  <span><i class="sw" style="background:#ecfdf5;border:1px solid #047857"></i> in force</span>
+  <span><i class="sw" style="background:#fffbeb;border:1px solid #b45309"></i> superseded</span>
+  <span><i class="sw" style="background:#fef2f2;border:1px solid #b91c1c"></i> repealed / withdrawn</span>
+  <span>double border = Master Direction</span>
+  <span>solid arrow = replaces &nbsp; dashed = amends / refers</span>
+</div>
+<main><pre class="mermaid">
+flowchart TD
+  Nrbi_md_11959[["Master Directions – Priority Sector Lending (PSL) –…<br/><small>2020-09-04 · master_direction</small>"]]:::active
+  Nrbi_md_12799[["Master Directions - Reserve Bank of India (Priority…<br/><small>2026-08-07 · master_direction</small>"]]:::active
+  Nrbi_nt_12694[["Priority Sector Lending – Amendments to the Master…<br/><small>2024-06-21 · master_direction</small>"]]:::active
+  Nrbi_nt_12799[["Master Directions - Reserve Bank of India (Priority…<br/><small>2025-03-24 · master_direction</small>"]]:::active
+  Nrbi_nt_12694 -.->|amends| Nrbi_md_11959
+  Nrbi_nt_12799 -.->|amends| Nrbi_nt_12694
+  Nrbi_md_12799 -.->|amends| Nrbi_nt_12694
+  class Nrbi_md_11959 focus
+  classDef active fill:#ecfdf5,stroke:#047857,stroke-width:1px,color:#064e3b;
+  classDef superseded fill:#fffbeb,stroke:#b45309,stroke-width:1px,color:#78350f;
+  classDef dead fill:#fef2f2,stroke:#b91c1c,stroke-width:1px,color:#7f1d1d,stroke-dasharray:4 3;
+  classDef focus stroke:#1d4ed8,stroke-width:3px;
+</pre></main>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, securityLevel: "loose",
+    theme: window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "default" });
+</script>
+</body></html>

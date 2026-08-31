@@ -1,0 +1,132 @@
+[
+  {
+    "id": "BA-01",
+    "name": "Corporate Governance & Board Oversight",
+    "description": "SAMA Corporate Governance Regulations, Board Risk & Audit Committees, Fit & Proper criteria, conflicts of interest."
+  },
+  {
+    "id": "BA-02",
+    "name": "AML/CFT Governance & Sanctions",
+    "description": "Saudi Anti-Money Laundering Law, SAFIU reporting, UNSC & Presidency of State Security (PSS) lists, freezing."
+  },
+  {
+    "id": "BA-03",
+    "name": "Customer Due Diligence (CDD) & KYC",
+    "description": "Identification of natural persons and legal entities, Nafath/Absher verification, 5% Beneficial Ownership threshold."
+  },
+  {
+    "id": "BA-04",
+    "name": "Digital Onboarding & E-KYC",
+    "description": "Remote customer onboarding, biometric liveness validation, non-face-to-face risk mitigation, Nafath API."
+  },
+  {
+    "id": "BA-05",
+    "name": "Transaction Monitoring & Suspicious Reporting",
+    "description": "Automated alert generation, threshold monitoring, STR/CTR filing with SAFIU, structured transactions."
+  },
+  {
+    "id": "BA-06",
+    "name": "Customer Risk Categorisation & PEPs",
+    "description": "Politically Exposed Persons (domestic and international), high-risk jurisdictions, Enhanced Due Diligence (EDD)."
+  },
+  {
+    "id": "BA-07",
+    "name": "Cyber Security Framework (CSF) & Governance",
+    "description": "SAMA CSF v3.0, CISO independence, cyber risk strategy, Board IT Steering Committee, Maturity Level 3+."
+  },
+  {
+    "id": "BA-08",
+    "name": "Threat Intelligence & SOC Operations",
+    "description": "24/7 Security Operations Center, SAMA Cyber Threat Intelligence (CTI) feed integration, 2-hour incident reporting."
+  },
+  {
+    "id": "BA-09",
+    "name": "Threat-Led Penetration Testing (TLPT)",
+    "description": "SAMA Red Teaming / TLPT framework, simulated cyber-attacks, 30-day mandatory remediation of critical findings."
+  },
+  {
+    "id": "BA-10",
+    "name": "Cloud Computing & Data Sovereignty",
+    "description": "SAMA Cloud Computing Regulatory Framework, In-Kingdom data residency, cloud tenant isolation, Class 1-4 data."
+  },
+  {
+    "id": "BA-11",
+    "name": "Outsourcing & Third-Party Risk Management (TPRM)",
+    "description": "SAMA Outsourcing Rules, material outsourcing SAMA non-objection, vendor exit strategies and audit clauses."
+  },
+  {
+    "id": "BA-12",
+    "name": "Business Continuity & Operational Resilience",
+    "description": "SAMA BCM Framework, Disaster Recovery site in KSA, RTO/RPO limits, annual unannounced failover simulations."
+  },
+  {
+    "id": "BA-13",
+    "name": "Open Banking & Financial APIs",
+    "description": "SAMA Open Banking Framework, AISP and PISP API specifications, OAuth2 security, Open Banking Portal onboarding."
+  },
+  {
+    "id": "BA-14",
+    "name": "Payment Systems & National Rails",
+    "description": "SARIE real-time gross settlement, mada debit scheme, Sadad bill presentment, instant payment limit controls."
+  },
+  {
+    "id": "BA-15",
+    "name": "Consumer Protection & Fair Treatment",
+    "description": "SAMA Consumer Protection Principles, Financial Consumer Rights Charter, transparent tariff disclosure, 10-day complaint SLA."
+  },
+  {
+    "id": "BA-16",
+    "name": "Responsible Lending & APR Transparency",
+    "description": "Debt Burden Ratio (DBR) caps (33.33% salary / 45% mortgage), Total Cost of Credit, APR schedule disclosure."
+  },
+  {
+    "id": "BA-17",
+    "name": "Credit Risk Policy & Appraisal",
+    "description": "Credit underwriting guidelines, internal rating validation, delegation of credit authority, early warning indicators."
+  },
+  {
+    "id": "BA-18",
+    "name": "Large Exposures & Concentration Ceilings",
+    "description": "Single borrower limits (15% of regulatory capital), related parties (25%), sector and geographic concentration."
+  },
+  {
+    "id": "BA-19",
+    "name": "SIMAH Credit Bureau Reporting & Inquiries",
+    "description": "Mandatory credit history pull and monthly reporting to Saudi Credit Bureau (SIMAH), 30-day default updates."
+  },
+  {
+    "id": "BA-20",
+    "name": "Capital Adequacy & Basel III Accord",
+    "description": "CET1, Tier 1, Total Capital ratios, Capital Conservation Buffer (2.5%), D-SIB capital surcharges."
+  },
+  {
+    "id": "BA-21",
+    "name": "Liquidity Risk & Basel Ratios (LCR / NSFR)",
+    "description": "Liquidity Coverage Ratio (LCR >= 100%), Net Stable Funding Ratio (NSFR >= 100%), intraday liquidity stress testing."
+  },
+  {
+    "id": "BA-22",
+    "name": "ICAAP & Enterprise Stress Testing",
+    "description": "Internal Capital Adequacy Assessment Process, macroeconomic stress scenarios, supervisory capital buffers."
+  },
+  {
+    "id": "BA-23",
+    "name": "Internal Audit & Assurance (3rd Line)",
+    "description": "Risk-Based Internal Audit (RBIA), Board Audit Committee independence, compliance verification audit cycles."
+  },
+  {
+    "id": "BA-24",
+    "name": "Financial Fraud Prevention & Countermeasures",
+    "description": "Real-time fraud screening, mule account ring detection, SIM-swap validation, SAMA fraud reporting portal."
+  },
+  {
+    "id": "BA-25",
+    "name": "Sharia Governance & Islamic Banking Compliance",
+    "description": "Sharia Supervisory Board approvals, Murabaha/Ijara/Sukuk structuring compliance, annual Sharia audit."
+  },
+  {
+    "id": "BA-99",
+    "name": "Unclassified — Needs Manual Assignment",
+    "description": "Placeholder for SAMA requirements whose business area mapping is pending review."
+  }
+]

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+fixtures/live-*.html
+*.db
+*.db-wal
+*.db-shm
+__pycache__/
+.env
+
