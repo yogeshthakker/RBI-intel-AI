@@ -42,13 +42,13 @@
   "author": "Sber India",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "cheerio": "^1.2.0",
     "p-limit": "^7.3.0",
     "pdf-parse": "^2.4.5",
     "playwright": "^1.62.1",
     "turndown": "^7.2.4",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",
