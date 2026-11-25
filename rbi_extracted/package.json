@@ -42,7 +42,7 @@
   "author": "Sber India",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "cheerio": "^1.2.0",
     "p-limit": "^7.3.0",
     "pdf-parse": "^2.4.5",
